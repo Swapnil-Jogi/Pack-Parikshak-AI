@@ -1,0 +1,258 @@
+<%- include('partials/header', { title: 'Pack-Parikshak AI | Legal Metrology Compliance Portal' }) %>
+<%- include('partials/navbar') %>
+
+<main class="flex-grow">
+  
+  <!-- Hero Section -->
+  <section class="bg-gradient-to-b from-govblue to-govblue-dark text-white py-16 px-4 sm:px-6 lg:px-8 border-b border-slate-700 relative overflow-hidden">
+    <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:16px_16px]"></div>
+    
+    <div class="max-w-6xl mx-auto relative z-10 text-center">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-semibold mb-4">
+        <i class="fa-solid fa-stamp text-amber-400"></i> Legal Metrology (Packaged Commodities) Rules, 2011
+      </div>
+
+      <h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight max-w-4xl mx-auto leading-tight mb-4">
+        <%= t('heroHeading') %>
+      </h1>
+
+      <p class="text-sm sm:text-base text-slate-300 max-w-3xl mx-auto mb-8 font-normal leading-relaxed">
+        <%= t('heroDesc') %>
+      </p>
+
+      <!-- Main Action Buttons -->
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-3 mb-12">
+        <a href="/inspections/new" class="w-full sm:w-auto px-6 py-3 rounded-lg bg-amber-500 hover:bg-amber-600 text-govblue-dark font-extrabold text-sm shadow-lg hover:shadow-xl transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-cloud-arrow-up text-base"></i> <%= t('startScan') %>
+        </a>
+        <a href="#samples" class="w-full sm:w-auto px-6 py-3 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-white font-semibold text-sm border border-slate-600 transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-flask text-amber-400"></i> <%= t('viewDemo') %>
+        </a>
+        <a href="/officer/dashboard" class="w-full sm:w-auto px-6 py-3 rounded-lg bg-govblue-light/50 hover:bg-govblue-light text-white font-semibold text-sm border border-blue-400/40 transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-shield-halved text-amber-400"></i> <%= t('officerPortal') %>
+        </a>
+      </div>
+
+      <!-- Live Statistics Strip -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
+        <div class="bg-slate-800/60 backdrop-blur-sm border border-slate-700/80 rounded-xl p-4 text-center">
+          <div class="text-2xl sm:text-3xl font-extrabold text-white mb-0.5"><%= stats.total %>+</div>
+          <div class="text-[11px] text-slate-400 uppercase font-semibold"><%= t('totalInspected') %></div>
+        </div>
+        <div class="bg-slate-800/60 backdrop-blur-sm border border-slate-700/80 rounded-xl p-4 text-center">
+          <div class="text-2xl sm:text-3xl font-extrabold text-emerald-400 mb-0.5"><%= stats.compliant %></div>
+          <div class="text-[11px] text-slate-400 uppercase font-semibold"><%= t('compliantPackages') %></div>
+        </div>
+        <div class="bg-slate-800/60 backdrop-blur-sm border border-slate-700/80 rounded-xl p-4 text-center">
+          <div class="text-2xl sm:text-3xl font-extrabold text-red-400 mb-0.5"><%= stats.violations %></div>
+          <div class="text-[11px] text-slate-400 uppercase font-semibold"><%= t('flaggedInfractions') %></div>
+        </div>
+        <div class="bg-slate-800/60 backdrop-blur-sm border border-slate-700/80 rounded-xl p-4 text-center">
+          <div class="text-2xl sm:text-3xl font-extrabold text-amber-400 mb-0.5"><%= stats.rate %>%</div>
+          <div class="text-[11px] text-slate-400 uppercase font-semibold"><%= t('complianceIndex') %></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Interactive 1-Click Samples Section -->
+  <section id="samples" class="py-14 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
+    <div class="text-center mb-8">
+      <span class="text-xs font-bold uppercase tracking-wider text-amber-600 bg-amber-50 px-2.5 py-1 rounded border border-amber-200">
+        <i class="fa-solid fa-flask me-1"></i> <%= t('viewDemo') %>
+      </span>
+      <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 mt-2"><%= t('samplesTitle') %></h2>
+      <p class="text-xs text-slate-600 max-w-xl mx-auto mt-1">
+        <%= t('samplesSubtitle') %>
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+      
+      <!-- Sample 1: Fully Compliant -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover-lift flex flex-col justify-between">
+        <div>
+          <div class="p-4 bg-emerald-50/80 border-b border-emerald-100 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold shadow-sm">
+                <i class="fa-solid fa-check"></i>
+              </span>
+              <span class="font-bold text-xs text-emerald-950 uppercase tracking-wide"><%= t('tagCompliant') %></span>
+            </div>
+            <span class="badge bg-emerald-600 text-white text-[10px] px-2.5 py-1 rounded-full font-bold">Score: 100%</span>
+          </div>
+          <div class="p-5">
+            <h3 class="font-bold text-base text-slate-900 mb-1.5"><%= t('wheatFlourTitle') %></h3>
+            <p class="text-xs text-slate-600 mb-4 leading-relaxed">
+              <%= t('wheatFlourDesc') %>
+            </p>
+            <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs mb-4 space-y-1.5">
+              <div class="text-slate-700 flex items-center gap-2">
+                <i class="fa-solid fa-circle-check text-emerald-600 text-xs"></i> <span><strong>SI Unit:</strong> <%= t('tagUnitOk') %></span>
+              </div>
+              <div class="text-slate-700 flex items-center gap-2">
+                <i class="fa-solid fa-circle-check text-emerald-600 text-xs"></i> <span><strong>MRP:</strong> Rs. 285 (<%= t('tagTaxOk') %>)</span>
+              </div>
+              <div class="text-slate-700 flex items-center gap-2">
+                <i class="fa-solid fa-circle-check text-emerald-600 text-xs"></i> <span><strong>Origin & Care:</strong> India | 1800-200-8899</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="px-5 pb-5 pt-0">
+          <form action="/inspections/upload" method="POST">
+            <input type="hidden" name="sampleType" value="wheat_flour">
+            <button type="submit" class="w-full btn btn-outline-success text-xs font-bold py-2.5 rounded-lg flex items-center justify-center gap-1.5 shadow-sm hover:shadow">
+              <i class="fa-solid fa-microchip"></i> <%= t('analyzeLabel') %> (Scenario A)
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Sample 2: Non-Compliant / Violating -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover-lift flex flex-col justify-between">
+        <div>
+          <div class="p-4 bg-red-50/80 border-b border-red-100 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-7 h-7 rounded-full bg-red-600 text-white flex items-center justify-center text-xs font-bold shadow-sm">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+              </span>
+              <span class="font-bold text-xs text-red-950 uppercase tracking-wide"><%= t('tagViolations') %></span>
+            </div>
+            <span class="badge bg-red-600 text-white text-[10px] px-2.5 py-1 rounded-full font-bold">Violations</span>
+          </div>
+          <div class="p-5">
+            <h3 class="font-bold text-base text-slate-900 mb-1.5"><%= t('snackPackTitle') %></h3>
+            <p class="text-xs text-slate-600 mb-4 leading-relaxed">
+              <%= t('snackPackDesc') %>
+            </p>
+            <div class="bg-red-50/70 p-3 rounded-lg border border-red-200 text-xs mb-4 space-y-1.5 text-red-900">
+              <div class="flex items-center gap-2"><i class="fa-solid fa-circle-xmark text-red-600 text-xs"></i> <span><%= t('tagNonStdUnit') %></span></div>
+              <div class="flex items-center gap-2"><i class="fa-solid fa-circle-xmark text-red-600 text-xs"></i> <span><%= t('tagMissingTax') %></span></div>
+              <div class="flex items-center gap-2"><i class="fa-solid fa-circle-xmark text-red-600 text-xs"></i> <span><%= t('tagMissingOrigin') %></span></div>
+            </div>
+          </div>
+        </div>
+        <div class="px-5 pb-5 pt-0">
+          <form action="/inspections/upload" method="POST">
+            <input type="hidden" name="sampleType" value="snack_pack">
+            <button type="submit" class="w-full btn btn-outline-danger text-xs font-bold py-2.5 rounded-lg flex items-center justify-center gap-1.5 shadow-sm hover:shadow">
+              <i class="fa-solid fa-shield-halved"></i> <%= t('analyzeLabel') %> (Scenario B)
+            </button>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 8 Mandatory Declarations Rule Matrix -->
+  <section class="py-14 bg-white border-y border-slate-200">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-10">
+        <h2 class="text-2xl font-bold text-slate-900"><%= t('rulesTitle') %></h2>
+        <p class="text-xs text-slate-600 max-w-2xl mx-auto mt-1">
+          <%= t('rulesSubtitle') %>
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover-lift flex flex-col justify-between">
+          <div>
+            <div class="w-8 h-8 rounded-lg bg-blue-100 text-govblue flex items-center justify-center font-bold text-xs mb-3 shadow-xs">1</div>
+            <h4 class="font-bold text-xs text-slate-900 mb-1"><%= t('rule1Title') %></h4>
+            <span class="text-[10px] text-slate-500 font-semibold">Rule 6(1)(a)</span>
+          </div>
+          <p class="text-[11px] text-slate-600 mt-2"><%= t('rule1Desc') %></p>
+        </div>
+
+        <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover-lift flex flex-col justify-between">
+          <div>
+            <div class="w-8 h-8 rounded-lg bg-blue-100 text-govblue flex items-center justify-center font-bold text-xs mb-3 shadow-xs">2</div>
+            <h4 class="font-bold text-xs text-slate-900 mb-1"><%= t('rule2Title') %></h4>
+            <span class="text-[10px] text-slate-500 font-semibold">Rule 6(1)(aa) &amp; Rule 6(1)(a)</span>
+          </div>
+          <p class="text-[11px] text-slate-600 mt-2"><%= t('rule2Desc') %></p>
+        </div>
+
+        <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover-lift flex flex-col justify-between">
+          <div>
+            <div class="w-8 h-8 rounded-lg bg-blue-100 text-govblue flex items-center justify-center font-bold text-xs mb-3 shadow-xs">3</div>
+            <h4 class="font-bold text-xs text-slate-900 mb-1"><%= t('rule3Title') %></h4>
+            <span class="text-[10px] text-slate-500 font-semibold">Rule 6(1)(b)</span>
+          </div>
+          <p class="text-[11px] text-slate-600 mt-2"><%= t('rule3Desc') %></p>
+        </div>
+
+        <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover-lift flex flex-col justify-between">
+          <div>
+            <div class="w-8 h-8 rounded-lg bg-blue-100 text-govblue flex items-center justify-center font-bold text-xs mb-3 shadow-xs">4</div>
+            <h4 class="font-bold text-xs text-slate-900 mb-1"><%= t('rule4Title') %></h4>
+            <span class="text-[10px] text-slate-500 font-semibold">Rule 6(1)(c) & Rule 13</span>
+          </div>
+          <p class="text-[11px] text-slate-600 mt-2"><%= t('rule4Desc') %></p>
+        </div>
+
+        <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover-lift flex flex-col justify-between">
+          <div>
+            <div class="w-8 h-8 rounded-lg bg-blue-100 text-govblue flex items-center justify-center font-bold text-xs mb-3 shadow-xs">5</div>
+            <h4 class="font-bold text-xs text-slate-900 mb-1"><%= t('rule5Title') %></h4>
+            <span class="text-[10px] text-slate-500 font-semibold">Rule 6(1)(d)</span>
+          </div>
+          <p class="text-[11px] text-slate-600 mt-2"><%= t('rule5Desc') %></p>
+        </div>
+
+        <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover-lift flex flex-col justify-between">
+          <div>
+            <div class="w-8 h-8 rounded-lg bg-blue-100 text-govblue flex items-center justify-center font-bold text-xs mb-3 shadow-xs">6</div>
+            <h4 class="font-bold text-xs text-slate-900 mb-1"><%= t('rule6Title') %></h4>
+            <span class="text-[10px] text-slate-500 font-semibold">Rule 6(1)(e)</span>
+          </div>
+          <p class="text-[11px] text-slate-600 mt-2"><%= t('rule6Desc') %></p>
+        </div>
+
+        <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover-lift flex flex-col justify-between">
+          <div>
+            <div class="w-8 h-8 rounded-lg bg-blue-100 text-govblue flex items-center justify-center font-bold text-xs mb-3 shadow-xs">7</div>
+            <h4 class="font-bold text-xs text-slate-900 mb-1"><%= t('rule7Title') %></h4>
+            <span class="text-[10px] text-slate-500 font-semibold">Rule 6(1)(n)</span>
+          </div>
+          <p class="text-[11px] text-slate-600 mt-2"><%= t('rule7Desc') %></p>
+        </div>
+
+        <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover-lift flex flex-col justify-between">
+          <div>
+            <div class="w-8 h-8 rounded-lg bg-blue-100 text-govblue flex items-center justify-center font-bold text-xs mb-3 shadow-xs">8</div>
+            <h4 class="font-bold text-xs text-slate-900 mb-1"><%= t('rule8Title') %></h4>
+            <span class="text-[10px] text-slate-500 font-semibold">Rule 6(1)(m)</span>
+          </div>
+          <p class="text-[11px] text-slate-600 mt-2"><%= t('rule8Desc') %></p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 36 Penalty Overview Banner -->
+  <section class="py-10 bg-slate-900 text-white">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
+      <div class="space-y-1">
+        <span class="text-xs font-bold text-red-400 uppercase tracking-wider"><%= t('sec36Title') %></span>
+        <h3 class="text-xl font-extrabold"><%= t('sec36Title') %></h3>
+        <p class="text-xs text-slate-400 max-w-xl">
+          <%= t('sec36Desc') %>
+        </p>
+      </div>
+      <div class="flex items-center gap-3">
+        <a href="/officer/dashboard" class="btn btn-warning text-xs font-bold py-2.5 px-5 shadow">
+          <i class="fa-solid fa-calculator me-1"></i> <%= t('fineEstimate') %>
+        </a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<%- include('partials/footer') %>

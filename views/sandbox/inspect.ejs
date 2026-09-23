@@ -1,0 +1,431 @@
+<%- include('../partials/header', { title: 'Interactive OCR Sandbox | Pack-Parikshak AI' }) %>
+<%- include('../partials/navbar') %>
+
+<main class="flex-grow py-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+  
+  <!-- Breadcrumb & Top Bar -->
+  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-200">
+    <div>
+      <div class="flex items-center gap-2 text-xs text-slate-500 mb-1">
+        <a href="/" class="hover:text-govblue"><%= t('sandboxBreadcrumbHome') %></a>
+        <span>/</span>
+        <a href="/inspections/new" class="hover:text-govblue"><%= t('sandboxBreadcrumbInspections') %></a>
+        <span>/</span>
+        <span class="text-slate-800 font-semibold"><%= inspection.inspectionNumber %></span>
+      </div>
+      <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 flex items-center gap-2">
+        <span><%= inspection.productName %></span>
+        <% if (inspection.complianceStatus === 'COMPLIANT') { %>
+          <span class="badge bg-emerald-600 text-white text-xs px-2.5 py-1"><%= t('statusCompliant') %></span>
+        <% } else if (inspection.complianceStatus === 'WARNING') { %>
+          <span class="badge bg-amber-500 text-white text-xs px-2.5 py-1"><%= t('statusWarning') %></span>
+        <% } else { %>
+          <span class="badge bg-red-600 text-white text-xs px-2.5 py-1"><%= t('statusNonCompliant') %></span>
+        <% } %>
+      </h1>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex items-center gap-2">
+      <a href="/reports/<%= inspection._id %>/pdf" class="btn btn-outline-danger btn-sm text-xs font-bold py-2 px-3 flex items-center gap-1.5 shadow-sm">
+        <i class="fa-solid fa-file-pdf"></i> <%= t('btnDownloadPdf') %>
+      </a>
+      <% if (user && user.role === 'officer') { %>
+        <button type="button" id="btnOpenNoticeModal" class="btn btn-warning btn-sm text-xs font-bold py-2 px-3 flex items-center gap-1.5 shadow-sm">
+          <i class="fa-solid fa-gavel"></i> <%= t('btnIssueNotice') %>
+        </button>
+        <div id="noticeData" class="hidden"
+          data-id="<%= inspection._id %>"
+          data-product="<%= inspection.productName %>"
+          data-manufacturer="<%= inspection.extractedData ? inspection.extractedData.manufacturer : '' %>"
+          data-violations="<%= (inspection.violationsList || []).join(';') %>"
+          data-penalty="<%= inspection.section36Penalty ? inspection.section36Penalty.estimatedAmount : 25000 %>">
+        </div>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    
+    <!-- LEFT COLUMN: Canvas Bounding Box Visualizer (col-span-7) -->
+    <div class="lg:col-span-7 space-y-4">
+      
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <!-- Canvas Toolbar -->
+        <div class="bg-slate-900 text-white px-4 py-2.5 flex items-center justify-between text-xs border-b border-slate-800">
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-amber-400"><i class="fa-solid fa-eye me-1"></i> PaddleOCR Spatial Bounding Boxes</span>
+            <span class="text-slate-400 text-[11px]">(<%= (inspection.ocrBoxes || []).length %> detections)</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button onclick="window.sandbox.zoomIn()" class="p-1 hover:bg-slate-800 rounded text-slate-300 hover:text-white" title="Zoom In">
+              <i class="fa-solid fa-magnifying-glass-plus"></i>
+            </button>
+            <button onclick="window.sandbox.zoomOut()" class="p-1 hover:bg-slate-800 rounded text-slate-300 hover:text-white" title="Zoom Out">
+              <i class="fa-solid fa-magnifying-glass-minus"></i>
+            </button>
+            <button onclick="window.sandbox.resetZoom()" class="p-1 hover:bg-slate-800 rounded text-slate-300 hover:text-white" title="Reset Zoom">
+              <i class="fa-solid fa-rotate-right"></i>
+            </button>
+            <button onclick="window.sandbox.toggleBoxes()" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 rounded text-[11px] font-semibold text-amber-300 ms-2">
+              <%= t('canvasToggleBoxes') %>
+            </button>
+          </div>
+        </div>
+
+        <!-- Canvas Container -->
+        <div class="canvas-wrapper p-2 bg-slate-950 flex items-center justify-center min-h-[380px] overflow-auto">
+          <canvas id="ocrCanvas"></canvas>
+          <div id="canvasTooltip" class="canvas-tooltip"></div>
+        </div>
+
+        <!-- Canvas Footer Note -->
+        <div class="px-4 py-2 bg-slate-50 text-[11px] text-slate-500 border-t border-slate-200 flex items-center justify-between">
+          <span><i class="fa-solid fa-mouse-pointer text-amber-500 me-1"></i> <%= t('canvasHoverHint') %></span>
+          <span class="text-slate-400 font-mono"><%= inspection.imageDims.width %>x<%= inspection.imageDims.height %>px</span>
+        </div>
+      </div>
+
+      <!-- Raw OCR Extracted Text Section (Open by default with Full Text & Line Detections tabs) -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="p-4 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <div class="w-7 h-7 rounded-lg bg-blue-100 text-govblue flex items-center justify-center text-xs font-bold">
+              <i class="fa-solid fa-align-left"></i>
+            </div>
+            <div>
+              <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                <%= t('rawOcrTitle') %>
+              </h3>
+              <p class="text-[10px] text-slate-500"><%= t('rawOcrNotice') %></p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <span class="badge bg-govblue text-white text-[10px] font-bold px-2 py-1">
+              <%= (inspection.ocrBoxes || []).length %> Detected Lines
+            </span>
+            <!-- Copy button -->
+            <button onclick="copyRawOcrText()" class="btn btn-outline-secondary btn-sm text-[10px] py-1 px-2 flex items-center gap-1 bg-white hover:bg-slate-100" title="Copy raw text">
+              <i class="fa-solid fa-copy text-amber-500"></i> <span id="copyBtnText"><%= t('rawOcrCopyBtn') %></span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Navigation Tabs: Full Raw Text vs Line-by-Line -->
+        <div class="px-4 pt-3 pb-0 border-b border-slate-200 bg-white">
+          <ul class="nav nav-tabs border-0 -mb-px text-xs" id="ocrTextTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active font-semibold text-xs py-2 px-3 border-0 border-b-2 border-govblue text-govblue" id="tab-fulltext-btn" data-bs-toggle="tab" data-bs-target="#tab-fulltext" type="button" role="tab">
+                <i class="fa-solid fa-file-lines me-1"></i> <%= t('rawOcrTabFull') %>
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link font-semibold text-xs py-2 px-3 border-0 border-b-2 border-transparent text-slate-500 hover:text-slate-800" id="tab-lines-btn" data-bs-toggle="tab" data-bs-target="#tab-lines" type="button" role="tab">
+                <i class="fa-solid fa-list-ol me-1"></i> <%= t('rawOcrTabLines') %>
+              </button>
+            </li>
+          </ul>
+        </div>
+
+        <div class="tab-content p-4" id="ocrTextTabsContent">
+          <!-- Tab 1: Full Raw Text Block -->
+          <div class="tab-pane fade show active" id="tab-fulltext" role="tabpanel">
+            <% 
+              let rawContent = inspection.rawText || '';
+              if (!rawContent && inspection.ocrBoxes && inspection.ocrBoxes.length > 0) {
+                rawContent = inspection.ocrBoxes.map(b => b.text).join('\n');
+              }
+            %>
+            <% if (rawContent.trim()) { %>
+              <div class="relative">
+                <pre id="rawOcrPreText" class="bg-slate-900 text-slate-100 font-mono text-xs p-4 rounded-lg overflow-x-auto max-h-64 whitespace-pre-wrap leading-relaxed border border-slate-800 selection:bg-amber-500 selection:text-slate-950"><%= rawContent %></pre>
+              </div>
+            <% } else { %>
+              <div class="text-center py-6 text-slate-400 text-xs bg-slate-50 rounded-lg border border-dashed border-slate-200">
+                <i class="fa-solid fa-triangle-exclamation text-amber-500 mb-1 text-base"></i>
+                <p>No raw text lines detected on this packaging label image.</p>
+              </div>
+            <% } %>
+          </div>
+
+          <!-- Tab 2: Line-by-Line Detections & Confidence -->
+          <div class="tab-pane fade" id="tab-lines" role="tabpanel">
+            <% if (inspection.ocrBoxes && inspection.ocrBoxes.length > 0) { %>
+              <div class="max-h-64 overflow-y-auto space-y-1.5 text-xs font-mono bg-slate-50 p-3 rounded-lg border border-slate-200">
+                <% inspection.ocrBoxes.forEach((b, idx) => { %>
+                  <div class="raw-box-item p-2 rounded-md bg-white border border-slate-200 flex items-center justify-between gap-3 transition-all hover:border-amber-400 hover:shadow-xs" data-box-index="<%= idx %>">
+                    <div class="flex items-center gap-2 overflow-hidden">
+                      <span class="w-5 h-5 rounded bg-slate-100 text-slate-600 text-[10px] font-bold flex items-center justify-center shrink-0">
+                        <%= idx + 1 %>
+                      </span>
+                      <span class="text-slate-800 font-medium truncate"><%= b.text %></span>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                      <span class="badge text-[10px] font-bold <%= (b.confidence || 0.9) >= 0.85 ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800' %>">
+                        <%= Math.round((b.confidence || 0.9) * 100) %>%
+                      </span>
+                    </div>
+                  </div>
+                <% }) %>
+              </div>
+            <% } else { %>
+              <div class="text-center py-6 text-slate-400 text-xs bg-slate-50 rounded-lg border border-dashed border-slate-200">
+                <i class="fa-solid fa-triangle-exclamation text-amber-500 mb-1 text-base"></i>
+                <p>No bounding box detections available.</p>
+              </div>
+            <% } %>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN: Statutory Verification & Live Rule Correction Hub (col-span-5) -->
+    <div class="lg:col-span-5 space-y-4 lg:sticky lg:top-4 self-start">
+      
+      <!-- Live Score & Penalty Card -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <div class="text-[11px] text-slate-500 uppercase font-bold tracking-wider"><%= t('complianceIndex') %></div>
+            <div class="text-3xl font-extrabold text-slate-900" id="complianceScoreDisplay">
+              <%= inspection.complianceScore %>%
+            </div>
+          </div>
+          <div class="text-end">
+            <span class="text-[11px] text-slate-500 uppercase font-bold"><%= t('fineEstimate') %></span>
+            <div class="text-lg font-bold text-red-600" id="penaltyAmountDisplay">
+              ₹ <%= (inspection.section36Penalty ? inspection.section36Penalty.estimatedAmount : 0).toLocaleString('en-IN') %>
+            </div>
+          </div>
+        </div>
+
+        <div class="w-full bg-slate-100 rounded-full h-2 mb-3 overflow-hidden">
+          <div id="complianceProgressBar" class="h-2 rounded-full <%= inspection.complianceScore >= 80 ? 'bg-emerald-600' : inspection.complianceScore >= 50 ? 'bg-amber-500' : 'bg-red-600' %> transition-all duration-500" data-initial-score="<%= inspection.complianceScore %>"></div>
+        </div>
+
+        <div id="violationsSummaryBox" class="<%= inspection.violationsCount > 0 ? '' : 'hidden' %> bg-red-50 border-l-4 border-red-500 p-3 rounded text-xs text-red-800">
+          <div class="font-bold mb-1 flex items-center gap-1">
+            <i class="fa-solid fa-triangle-exclamation"></i> <span id="violationsCountDisplay"><%= inspection.violationsCount %></span> Statutory Infraction(s) Detected
+          </div>
+          <ul id="violationsUl" class="list-disc pl-4 space-y-0.5 text-[11px]">
+            <% (inspection.violationsList || []).forEach(v => { %>
+              <li><%= v %></li>
+            <% }) %>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Live Rule Badges Checklist -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+        <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3 flex items-center justify-between">
+          <span><%= t('ruleChecklistTitle') %></span>
+          <span class="text-[10px] text-slate-500">Legal Metrology Rules, 2011</span>
+        </h3>
+
+        <div class="space-y-2" id="rulesListContainer">
+          <% (inspection.rulesEvaluation || []).forEach((r) => { %>
+            <div class="rule-card p-2.5 rounded-lg border <%= r.status === 'PASS' ? 'border-emerald-200 bg-emerald-50/50' : r.status === 'WARNING' ? 'border-amber-200 bg-amber-50/50' : 'border-red-200 bg-red-50/50' %> flex items-start justify-between gap-2">
+              <div class="text-xs">
+                <div class="font-bold text-slate-900 flex items-center gap-1.5">
+                  <% if (r.status === 'PASS') { %>
+                    <i class="fa-solid fa-circle-check text-emerald-600"></i>
+                  <% } else if (r.status === 'WARNING') { %>
+                    <i class="fa-solid fa-circle-exclamation text-amber-500"></i>
+                  <% } else { %>
+                    <i class="fa-solid fa-circle-xmark text-red-600"></i>
+                  <% } %>
+                  <span><%= r.ruleName %></span>
+                </div>
+                <div class="text-[11px] text-slate-600 mt-0.5"><%= r.message %></div>
+              </div>
+              <span class="badge text-[10px] uppercase font-bold shrink-0 <%= r.status === 'PASS' ? 'bg-emerald-600' : r.status === 'WARNING' ? 'bg-amber-500' : 'bg-red-600' %> text-white">
+                <%= r.status %>
+              </span>
+            </div>
+          <% }) %>
+        </div>
+      </div>
+
+      <!-- Editable Correction Panel -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+            <i class="fa-solid fa-pen-to-square text-amber-500"></i> <%= t('correctionTitle') %>
+          </h3>
+          <span class="text-[10px] text-slate-500"><%= t('correctionDesc') %></span>
+        </div>
+
+        <form id="correctionForm" class="space-y-3">
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-700 mb-0.5"><%= t('fieldCommodity') %></label>
+            <input type="text" id="inputCommodity" value="<%= inspection.extractedData.commodityName %>" class="form-control form-control-sm text-xs rounded">
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-700 mb-0.5"><%= t('fieldNetQty') %></label>
+              <input type="text" id="inputNetQty" value="<%= inspection.extractedData.netQuantity %>" class="form-control form-control-sm text-xs rounded">
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-700 mb-0.5"><%= t('fieldUnit') %></label>
+              <input type="text" id="inputUnit" value="<%= inspection.extractedData.unit %>" class="form-control form-control-sm text-xs rounded">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-700 mb-0.5"><%= t('fieldMrp') %></label>
+              <input type="text" id="inputMrp" value="<%= (inspection.extractedData && inspection.extractedData.mrp) ? inspection.extractedData.mrp : '' %>" class="form-control form-control-sm text-xs rounded">
+              <div class="form-check mt-1">
+                <input class="form-check-input" type="checkbox" id="checkTaxes" value="true" data-checked="<%= (inspection.extractedData && inspection.extractedData.hasInclusiveOfTaxes) ? 'true' : 'false' %>">
+                <label class="form-check-label text-[10px] text-slate-600" for="checkTaxes">
+                  <%= t('fieldTaxInclusive') %>
+                </label>
+              </div>
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-700 mb-0.5"><%= t('fieldUsp') %></label>
+              <input type="text" id="inputUsp" value="<%= (inspection.extractedData && inspection.extractedData.unitSalePrice) ? inspection.extractedData.unitSalePrice : '' %>" class="form-control form-control-sm text-xs rounded" placeholder="<%= t('fieldUspPlaceholder') || 'e.g. ₹ 57.00 / kg' %>">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-700 mb-0.5"><%= t('fieldMfgDate') %></label>
+              <input type="text" id="inputMfgDate" value="<%= (inspection.extractedData && inspection.extractedData.mfgDate) ? inspection.extractedData.mfgDate : '' %>" class="form-control form-control-sm text-xs rounded">
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-700 mb-0.5"><%= t('fieldOrigin') %></label>
+              <input type="text" id="inputOrigin" value="<%= (inspection.extractedData && inspection.extractedData.countryOfOrigin) ? inspection.extractedData.countryOfOrigin : '' %>" class="form-control form-control-sm text-xs rounded">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-700 mb-0.5"><%= t('fieldManufacturer') %></label>
+            <textarea id="inputManufacturer" rows="2" class="form-control form-control-sm text-xs rounded"><%= (inspection.extractedData && inspection.extractedData.manufacturer) ? inspection.extractedData.manufacturer : '' %></textarea>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-700 mb-0.5"><%= t('fieldProductAddress') %></label>
+            <textarea id="inputProductAddress" rows="2" class="form-control form-control-sm text-xs rounded" placeholder="<%= t('fieldProductAddressPlaceholder') || 'Manufacturing unit / factory / premises address' %>"><%= (inspection.extractedData && inspection.extractedData.productAddress) ? inspection.extractedData.productAddress : '' %></textarea>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-700 mb-0.5"><%= t('fieldPhone') %></label>
+              <input type="text" id="inputCarePhone" value="<%= inspection.extractedData.customerCarePhone %>" class="form-control form-control-sm text-xs rounded">
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-700 mb-0.5"><%= t('fieldEmail') %></label>
+              <input type="text" id="inputCareEmail" value="<%= inspection.extractedData.customerCareEmail %>" class="form-control form-control-sm text-xs rounded">
+            </div>
+          </div>
+
+          <button type="submit" id="btnReverify" class="w-full btn bg-govblue hover:bg-govblue-dark text-white font-bold text-xs py-2 rounded shadow transition flex items-center justify-center gap-1.5 mt-2">
+            <i class="fa-solid fa-arrows-rotate"></i> <%= t('btnReverify') %>
+          </button>
+        </form>
+      </div>
+
+    </div>
+
+  </div>
+</main>
+
+<!-- Section 36 Notice Modal (for Enforcement Officers) -->
+<div class="modal fade" id="noticeModal" tabindex="-1" aria-labelledby="noticeModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-xl rounded-xl overflow-hidden">
+      <div class="modal-header bg-govblue text-white py-3 px-4">
+        <h5 class="modal-title text-sm font-bold flex items-center gap-2" id="noticeModalLabel">
+          <i class="fa-solid fa-gavel text-amber-400"></i> <%= t('modalDraftNoticeTitle') %>
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="noticeDraftForm">
+        <div class="modal-body p-4 space-y-3 text-xs">
+          <input type="hidden" id="modalInspectionId" value="">
+          
+          <div class="bg-amber-50 p-2.5 rounded border border-amber-200 text-amber-900 font-medium">
+            <%= t('modalCommodity') %>: <strong id="modalProdName"></strong>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1"><%= t('modalRecipient') %></label>
+            <input type="text" id="modalRecipientName" required class="form-control form-control-sm text-xs rounded">
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1"><%= t('modalRecipientEmail') %></label>
+            <input type="email" id="modalRecipientEmail" required class="form-control form-control-sm text-xs rounded">
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1"><%= t('modalRecipientAddress') %></label>
+            <input type="text" id="modalRecipientAddress" class="form-control form-control-sm text-xs rounded">
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1"><%= t('modalOffenceSeverity') %></label>
+              <select id="modalOffenceLevel" class="form-select form-select-sm text-xs rounded">
+                <option value="first"><%= t('modalFirstOffence') %></option>
+                <option value="second"><%= t('modalSecondOffence') %></option>
+                <option value="subsequent"><%= t('modalSubsequentOffence') %></option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1"><%= t('modalHearingDeadline') %></label>
+              <select id="modalHearingDays" class="form-select form-select-sm text-xs rounded">
+                <option value="15"><%= t('modalDays15') %></option>
+                <option value="7"><%= t('modalDays7') %></option>
+                <option value="30"><%= t('modalDays30') %></option>
+              </select>
+            </div>
+          </div>
+
+          <div class="p-2.5 rounded bg-red-50 border border-red-200">
+            <span class="text-slate-600 font-semibold"><%= t('modalStatutoryPenalty') %></span>
+            <span class="font-extrabold text-red-600 ms-1 text-sm" id="modalPenaltyDisplay">₹ 25,000</span>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1"><%= t('modalIdentifiedViolations') %></label>
+            <ul id="modalViolationsList" class="max-h-24 overflow-y-auto pl-4 list-disc bg-slate-50 p-2 rounded border border-slate-200"></ul>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1"><%= t('modalOfficerRemarks') %></label>
+            <textarea id="modalCustomNotes" rows="2" placeholder="<%= t('modalOfficerRemarksPlaceholder') %>" class="form-control form-control-sm text-xs rounded"></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer bg-slate-50 py-2.5 px-4 flex justify-between">
+          <button type="button" class="btn btn-secondary btn-sm text-xs" data-bs-dismiss="modal"><%= t('btnCancel') %></button>
+          <button type="submit" id="submitNoticeBtn" class="btn btn-danger btn-sm text-xs font-bold py-1.5 px-4 shadow">
+            <i class="fa-solid fa-paper-plane me-1"></i> <%= t('btnIssueNoticeSubmit') %>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden Configuration for Sandbox & Verification -->
+<div id="sandboxConfig" class="hidden"
+  data-id="<%= inspection._id %>"
+  data-image-url="<%= inspection.imageUrl %>"
+  data-boxes="<%= encodeURIComponent(JSON.stringify(inspection.ocrBoxes || [])) %>"
+  data-dims="<%= encodeURIComponent(JSON.stringify(inspection.imageDims || { width: 800, height: 600 })) %>"
+  data-translations="<%= encodeURIComponent(clientTranslations || '{}') %>">
+</div>
+
+<!-- Load Client Scripts -->
+<script src="/js/canvas-sandbox.js"></script>
+<script src="/js/notice-modal.js"></script>
+<script src="/js/sandbox-inspect.js"></script>
+
+<%- include('../partials/footer') %>

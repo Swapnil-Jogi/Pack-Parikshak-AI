@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: pack-parikshak-ai
+    env: node
+    plan: starter
+    buildCommand: npm install && pip install -r python_ocr/requirements.txt
+    startCommand: node app.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: PYTHON_OCR_PORT
+        value: 5000
+      - key: MONGODB_URI
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+

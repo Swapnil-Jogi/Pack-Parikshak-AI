@@ -1,0 +1,67 @@
+version: '3.8'
+
+# ==============================================================================
+# Pack-Parikshak AI (पैक-परीक्षक एआई) - Production Docker Compose Stack
+# Fully orchestrated Web App + MongoDB + Persistent Storage Volumes
+# ==============================================================================
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pack-parikshak-app
+    restart: always
+    ports:
+      - "${PORT:-8080}:8080"
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+      - PYTHON_OCR_PORT=5000
+      - PYTHON_OCR_HOST=127.0.0.1
+      - MONGODB_URI=mongodb://mongodb:27017/pack_parikshak
+      - SESSION_SECRET=${SESSION_SECRET:-pack_parikshak_super_secret_session_2026_prod}
+      - JWT_SECRET=${JWT_SECRET:-pack_parikshak_jwt_secret_token_secure_2026_prod}
+      # Cloudinary (Optional - persistent docker volume used if blank)
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME:-}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY:-}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET:-}
+      # SMTP Email Service (Optional - Ethereal test mailer used if blank)
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
+      - SMTP_FROM=${SMTP_FROM:-"Legal Metrology Enforcement Wing <enforcement.lm@gov.in>"}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    volumes:
+      - uploads_data:/app/public/uploads
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 35s
+
+  mongodb:
+    image: mongo:7.0
+    container_name: pack-parikshak-mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  mongo_data:
+    driver: local
+  uploads_data:
+    driver: local
+

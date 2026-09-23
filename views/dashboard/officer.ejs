@@ -1,0 +1,453 @@
+<%- include('../partials/header', { title: t('officerHubTitle') + ' | ' + t('portalName') }) %>
+<%- include('../partials/navbar') %>
+
+<main class="flex-grow py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+  
+  <!-- Officer Identity & Jurisdiction Bar -->
+  <div class="bg-govblue text-white rounded-xl p-5 mb-8 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border border-slate-700">
+    <div class="flex items-center space-x-3">
+      <div class="w-12 h-12 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center text-xl font-bold">
+        <i class="fa-solid fa-shield-halved"></i>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="text-xl font-extrabold tracking-tight"><%= t('officerCmdHeading') %></h1>
+          <span class="bg-amber-500 text-govblue-dark text-[10px] font-bold px-2 py-0.5 rounded"><%= t('legalEnforcementBadge') %></span>
+        </div>
+        <p class="text-xs text-slate-300 mt-0.5">
+          <%= user ? user.name : t('officerLabel') %> | <%= t('badgeLabel') %>: <strong><%= (user && user.badgeId) ? user.badgeId : 'DL-LM-0842' %></strong> | <%= t('jurisdictionLabel') %>: <strong><%= (user && user.state) ? user.state : 'National' %></strong>
+        </p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <a href="/dashboard" class="btn btn-sm btn-outline-light text-xs font-semibold py-2 px-3 shadow-sm flex items-center gap-1.5" title="View uploaded image scans dashboard">
+        <i class="fa-solid fa-images text-amber-300"></i> My Uploaded Scans
+      </a>
+      <a href="/reports/export/csv" class="btn btn-sm btn-outline-light text-xs font-semibold py-2 px-3 shadow-sm flex items-center gap-1.5">
+        <i class="fa-solid fa-file-csv text-emerald-400"></i> <%= t('exportComplianceCsvBtn') %>
+      </a>
+      <a href="/inspections/new" class="btn btn-sm btn-warning text-xs font-bold py-2 px-3 shadow-sm flex items-center gap-1.5">
+        <i class="fa-solid fa-camera"></i> <%= t('inspectNewPackageBtn') %>
+      </a>
+    </div>
+  </div>
+
+  <!-- KPI Stats Row -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+      <div class="text-[11px] font-bold text-slate-500 uppercase"><%= t('inspectedCommoditiesCard') %></div>
+      <div class="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1"><%= stats.totalInspections %></div>
+      <div class="text-[10px] text-slate-400 mt-1"><%= t('underRules2011') %></div>
+    </div>
+    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+      <div class="text-[11px] font-bold text-slate-500 uppercase"><%= t('complianceRateCard') %></div>
+      <div class="text-2xl sm:text-3xl font-extrabold text-emerald-600 mt-1"><%= stats.complianceRate %>%</div>
+      <div class="text-[10px] text-emerald-600 font-semibold mt-1"><%= stats.compliantCount %> <%= t('fullyCompliantCountText') %></div>
+    </div>
+    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+      <div class="text-[11px] font-bold text-slate-500 uppercase"><%= t('flaggedInfractionsCard') %></div>
+      <div class="text-2xl sm:text-3xl font-extrabold text-red-600 mt-1"><%= stats.violationCount %></div>
+      <div class="text-[10px] text-red-600 font-semibold mt-1"><%= t('pendingSec36Text') %></div>
+    </div>
+    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+      <div class="text-[11px] font-bold text-slate-500 uppercase"><%= t('totalLiabilitiesCard') %></div>
+      <div class="text-2xl sm:text-3xl font-extrabold text-amber-600 mt-1">₹ <%= stats.totalFines.toLocaleString('en-IN') %></div>
+      <div class="text-[10px] text-amber-600 font-semibold mt-1"><%= t('statutoryFinesText') %></div>
+    </div>
+  </div>
+
+  <!-- Charts Row (Chart.js Integration) -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
+    
+    <!-- Compliance Donut Chart (5 cols) -->
+    <div class="lg:col-span-5 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">
+          <%= t('complianceDonutTitle') %>
+        </h3>
+        <span class="text-[10px] text-slate-400"><%= t('allRegisteredScans') %></span>
+      </div>
+      <div class="relative h-60 w-full">
+        <canvas id="complianceDonutChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Top Rule Infractions Bar Chart (7 cols) -->
+    <div class="lg:col-span-7 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">
+          <%= t('violationsBarTitle') %>
+        </h3>
+        <span class="text-[10px] text-slate-400"><%= t('underRules2011') %></span>
+      </div>
+      <div class="relative h-60 w-full">
+        <canvas id="violationsBarChart"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Regional Compliance Heatmap Section -->
+  <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mb-8" id="heatmap">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">
+          <%= t('regionalHeatmapTitle') %>
+        </h3>
+        <p class="text-[11px] text-slate-500 mt-0.5"><%= t('regionalHeatmapDesc') %></p>
+      </div>
+      <span class="badge bg-govblue text-white text-[10px] px-2 py-1"><%= t('stateRegulatorsBadge') %></span>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="table align-middle text-xs mb-0">
+        <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] font-bold">
+          <tr>
+            <th class="py-2.5"><%= t('colStateJurisdiction') %></th>
+            <th class="py-2.5 text-center"><%= t('colTotalPackages') %></th>
+            <th class="py-2.5 text-center"><%= t('colCompliant') %></th>
+            <th class="py-2.5 text-center"><%= t('colViolations') %></th>
+            <th class="py-2.5"><%= t('colViolationRateDensity') %></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          <% heatmapList.forEach((item) => { %>
+            <tr>
+              <td class="font-bold text-slate-800">
+                <i class="fa-solid fa-location-dot text-amber-500 me-1.5"></i> <%= item.state %>
+              </td>
+              <td class="text-center font-semibold"><%= item.total %></td>
+              <td class="text-center text-emerald-600 font-semibold"><%= item.compliant %></td>
+              <td class="text-center text-red-600 font-bold"><%= item.violations %></td>
+              <td class="w-1/3">
+                <div class="flex items-center gap-3">
+                  <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                    <div class="h-2 rounded-full <%= item.violationRate > 50 ? 'bg-red-600' : item.violationRate > 25 ? 'bg-amber-500' : 'bg-emerald-500' %>" data-bar-width="<%= Math.max(8, item.violationRate) %>"></div>
+                  </div>
+                  <span class="text-[11px] font-bold font-mono <%= item.violationRate > 50 ? 'text-red-600' : 'text-slate-700' %>">
+                    <%= item.violationRate %>%
+                  </span>
+                </div>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Official Inspection Queue -->
+  <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-8">
+    <div class="p-4 border-b border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+      <div>
+        <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">
+          <%= t('enforcementQueueTitle') %>
+        </h3>
+        <p class="text-[11px] text-slate-500 mt-0.5"><%= t('enforcementQueueDesc') %></p>
+      </div>
+
+      <!-- Filters -->
+      <div class="flex items-center gap-2 w-full sm:w-auto">
+        <input type="text" id="queueSearchInput" placeholder="<%= t('searchProductPlaceholder') %>" class="form-control form-control-sm text-xs rounded-lg py-1.5">
+        <select id="queueStatusFilter" class="form-select form-select-sm text-xs rounded-lg py-1.5">
+          <option value="ALL"><%= t('filterAllStatus') %></option>
+          <option value="NON_COMPLIANT"><%= t('statusNonCompliant') %></option>
+          <option value="WARNING"><%= t('statusWarning') %></option>
+          <option value="COMPLIANT"><%= t('statusCompliant') %></option>
+        </select>
+      </div>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="table table-hover align-middle mb-0 text-xs">
+        <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] font-bold border-b border-slate-200">
+          <tr>
+            <th class="ps-4 py-3"><%= t('colInspectionId') %></th>
+            <th class="py-3"><%= t('colCommodityBrand') %></th>
+            <th class="py-3"><%= t('colRegion') %></th>
+            <th class="py-3"><%= t('colInfractions') %></th>
+            <th class="py-3"><%= t('colStatus') %></th>
+            <th class="py-3"><%= t('colPenaltyExposure') %></th>
+            <th class="pe-4 py-3 text-end"><%= t('colEnforcementAction') %></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          <% queue.forEach(item => { %>
+            <tr class="queue-row" data-status="<%= item.complianceStatus %>">
+              <td class="ps-4 font-mono font-bold text-slate-700">
+                <a href="/inspections/<%= item._id %>/sandbox" class="hover:text-govblue hover:underline">
+                  <%= item.inspectionNumber %>
+                </a>
+              </td>
+              <td>
+                <div class="flex items-center gap-2.5">
+                  <a href="/inspections/<%= item._id %>/sandbox" class="relative group block flex-shrink-0" title="Click to view packaging in sandbox">
+                    <img src="<%= item.imageUrl %>" alt="<%= item.productName %>" class="w-10 h-10 object-cover rounded-lg border border-slate-200 shadow-xs group-hover:scale-105 transition bg-slate-100" onerror="this.src='/images/placeholder-package.svg'; this.onerror=null;">
+                  </a>
+                  <div>
+                    <a href="/inspections/<%= item._id %>/sandbox" class="font-bold text-slate-900 hover:text-govblue hover:underline block leading-tight">
+                      <%= item.productName %>
+                    </a>
+                    <div class="text-[10px] text-slate-500 mt-0.5"><%= item.brand %> | <%= item.category %></div>
+                  </div>
+                </div>
+              </td>
+              <td class="text-slate-600">
+                <span class="inline-flex items-center gap-1">
+                  <i class="fa-solid fa-location-dot text-[10px] text-slate-400"></i> <%= item.location ? item.location.state : 'Delhi' %>
+                </span>
+              </td>
+              <td>
+                <% if (item.violationsCount > 0) { %>
+                  <span class="badge bg-red-100 text-red-800 border border-red-200 font-semibold">
+                    <%= item.violationsCount %> <%= t('badgeViolations') %>
+                  </span>
+                <% } else { %>
+                  <span class="text-slate-400"><%= t('badgeNone') %></span>
+                <% } %>
+              </td>
+              <td>
+                <% if (item.complianceStatus === 'COMPLIANT') { %>
+                  <span class="badge bg-emerald-100 text-emerald-800"><%= t('statusCompliant') %></span>
+                <% } else if (item.complianceStatus === 'WARNING') { %>
+                  <span class="badge bg-amber-100 text-amber-800"><%= t('statusWarning') %></span>
+                <% } else { %>
+                  <span class="badge bg-red-100 text-red-800"><%= t('statusNonCompliant') %></span>
+                <% } %>
+              </td>
+              <td class="font-bold text-red-600">
+                ₹ <%= (item.section36Penalty ? item.section36Penalty.estimatedAmount : 25000).toLocaleString('en-IN') %>
+              </td>
+              <td class="pe-4 text-end space-x-1 whitespace-nowrap">
+                <a href="/inspections/<%= item._id %>/sandbox" class="btn btn-outline-primary btn-sm text-[11px] py-1 px-2" title="<%= t('btnSandbox') %>">
+                  <i class="fa-solid fa-microchip"></i>
+                </a>
+                <button type="button" class="btn btn-warning btn-sm text-[11px] font-bold py-1 px-2.5 shadow-xs btn-open-notice-modal"
+                  data-id="<%= item._id %>"
+                  data-type="WARNING"
+                  data-product="<%= item.productName %>"
+                  data-manufacturer="<%= item.extractedData.manufacturer || '' %>"
+                  data-violations="<%= (item.violationsList || []).join(';') %>"
+                  data-penalty="<%= item.section36Penalty ? item.section36Penalty.estimatedAmount : 25000 %>"
+                  title="Issue Pre-Enforcement Warning Notice with Rectification Deadline">
+                  <i class="fa-solid fa-triangle-exclamation me-1"></i> Warning Notice
+                </button>
+                <button type="button" class="btn btn-danger btn-sm text-[11px] font-bold py-1 px-2 shadow-xs btn-open-notice-modal"
+                  data-id="<%= item._id %>"
+                  data-type="SHOW_CAUSE"
+                  data-product="<%= item.productName %>"
+                  data-manufacturer="<%= item.extractedData.manufacturer || '' %>"
+                  data-violations="<%= (item.violationsList || []).join(';') %>"
+                  data-penalty="<%= item.section36Penalty ? item.section36Penalty.estimatedAmount : 25000 %>"
+                  title="Issue Formal Section 36 Show-Cause Notice">
+                  <i class="fa-solid fa-gavel me-0.5"></i> SCN
+                </button>
+                <a href="/reports/<%= item._id %>/pdf" class="btn btn-outline-danger btn-sm text-[11px] py-1 px-2" title="<%= t('btnDownloadPdf') %>">
+                  <i class="fa-solid fa-file-pdf"></i>
+                </a>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Recent Issued Section 36 Notices List -->
+  <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+    <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3 flex items-center justify-between">
+      <span><%= t('recentNoticesTitle') %></span>
+      <span class="text-[10px] text-slate-500"><%= t('officialEnforcementRegistry') %></span>
+    </h3>
+
+    <div class="overflow-x-auto">
+      <table class="table table-sm align-middle text-xs mb-0">
+        <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] font-bold">
+          <tr>
+            <th class="py-2"><%= t('colNoticeId') %></th>
+            <th class="py-2"><%= t('colRecipientEnterprise') %></th>
+            <th class="py-2"><%= t('colAssessedFine') %></th>
+            <th class="py-2"><%= t('colHearingDeadline') %></th>
+            <th class="py-2"><%= t('colDeliveryStatus') %></th>
+            <th class="py-2 text-end"><%= t('colDispatchedAt') %></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          <% if (recentNotices.length === 0) { %>
+            <tr>
+              <td colspan="6" class="text-center py-4 text-slate-400"><%= t('noNoticesIssuedYet') %></td>
+            </tr>
+          <% } else { %>
+            <% recentNotices.forEach(n => { %>
+              <tr>
+                <td class="font-mono font-bold text-slate-800">
+                  <span class="badge <%= n.noticeType === 'WARNING' ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-red-100 text-red-800 border border-red-300' %> text-[9px] me-1">
+                    <%= n.noticeType === 'WARNING' ? 'WARNING' : 'SCN' %>
+                  </span>
+                  <%= n.noticeNumber %>
+                </td>
+                <td>
+                  <div class="font-bold text-slate-900"><%= n.recipientName %></div>
+                  <div class="text-[10px] text-slate-500"><%= n.recipientEmail %></div>
+                </td>
+                <td class="font-bold <%= n.noticeType === 'WARNING' ? 'text-amber-600' : 'text-red-600' %>">
+                  <%= n.noticeType === 'WARNING' ? 'Advisory (₹ ' + (n.potentialPenaltyExposure || 25000).toLocaleString('en-IN') + ' exp.)' : '₹ ' + n.penaltyAmount.toLocaleString('en-IN') %>
+                </td>
+                <td><%= n.hearingDeadlineDays || n.rectificationDeadlineDays || 15 %> <%= t('daysSuffix') %></td>
+                <td>
+                  <span class="badge bg-emerald-100 text-emerald-800 border border-emerald-300">
+                    <i class="fa-solid fa-paper-plane me-1"></i> <%= n.emailStatus %>
+                  </span>
+                </td>
+                <td class="text-end text-slate-500"><%= new Date(n.createdAt).toLocaleDateString('en-IN') %></td>
+              </tr>
+            <% }) %>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<!-- Include Section 36 Notice Modal -->
+<div class="modal fade" id="noticeModal" tabindex="-1" aria-labelledby="noticeModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-xl rounded-xl overflow-hidden">
+      <div class="modal-header bg-govblue text-white py-3 px-4">
+        <h5 class="modal-title text-sm font-bold flex items-center gap-2" id="noticeModalLabel">
+          <i class="fa-solid fa-triangle-exclamation text-amber-400" id="modalHeaderIcon"></i> <span id="modalHeaderTitle">Issue Statutory Warning Notice</span>
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="noticeDraftForm">
+        <div class="modal-body p-4 space-y-3 text-xs">
+          <input type="hidden" id="modalInspectionId" value="">
+          
+          <!-- Notice Type Selector (Pills) -->
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Enforcement Action Type</label>
+            <div class="grid grid-cols-2 gap-2">
+              <label class="cursor-pointer border rounded-lg p-2.5 text-center transition border-amber-500 bg-amber-50 shadow-xs" id="lblNoticeTypeWarning">
+                <input type="radio" name="modalNoticeType" value="WARNING" checked class="me-1" onchange="switchModalNoticeType('WARNING')">
+                <span class="text-xs font-bold text-amber-900"><i class="fa-solid fa-triangle-exclamation text-amber-600 me-1"></i> Warning Notice</span>
+                <p class="text-[10px] text-amber-700 mt-0.5">Pre-enforcement advisory with compliance deadline</p>
+              </label>
+              <label class="cursor-pointer border rounded-lg p-2.5 text-center transition border-slate-300" id="lblNoticeTypeShowCause">
+                <input type="radio" name="modalNoticeType" value="SHOW_CAUSE" class="me-1" onchange="switchModalNoticeType('SHOW_CAUSE')">
+                <span class="text-xs font-bold text-slate-800"><i class="fa-solid fa-gavel text-red-600 me-1"></i> Show-Cause Notice</span>
+                <p class="text-[10px] text-slate-500 mt-0.5">Formal Section 36 legal prosecution & fine</p>
+              </label>
+            </div>
+          </div>
+
+          <!-- Warning Notice Explanatory Banner -->
+          <div id="modalWarningBanner" class="bg-amber-50 border-l-4 border-amber-500 p-2.5 rounded text-amber-900 text-[11px]">
+            <i class="fa-solid fa-bell text-amber-600 me-1"></i>
+            <strong>Advisory Escalation Policy:</strong> The manufacturer will receive this official warning giving them a strict deadline to rectify the violations. If not rectified within the deadline, an official Show-Cause Notice will follow automatically.
+          </div>
+
+          <div class="bg-slate-100 p-2.5 rounded border border-slate-200 text-slate-800 font-medium">
+            <%= t('modalCommodity') %>: <strong id="modalProdName"></strong>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1"><%= t('modalRecipient') %> <span class="text-red-500">*</span></label>
+            <input type="text" id="modalRecipientName" required class="form-control form-control-sm text-xs rounded">
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1"><%= t('modalRecipientEmail') %> <span class="text-red-500">*</span></label>
+            <input type="email" id="modalRecipientEmail" required class="form-control form-control-sm text-xs rounded" placeholder="compliance@manufacturer.in">
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1"><%= t('modalRecipientAddress') %></label>
+            <input type="text" id="modalRecipientAddress" class="form-control form-control-sm text-xs rounded">
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1"><%= t('modalOffenceSeverity') %></label>
+              <select id="modalOffenceLevel" class="form-select form-select-sm text-xs rounded">
+                <option value="first"><%= t('modalFirstOffence') %></option>
+                <option value="second"><%= t('modalSecondOffence') %></option>
+                <option value="subsequent"><%= t('modalSubsequentOffence') %></option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1" id="modalDeadlineLabel">Compliance Rectification Deadline</label>
+              <select id="modalHearingDays" class="form-select form-select-sm text-xs rounded">
+                <option value="15"><%= t('modalDays15') %></option>
+                <option value="7"><%= t('modalDays7') %></option>
+                <option value="30"><%= t('modalDays30') %></option>
+              </select>
+            </div>
+          </div>
+
+          <div class="p-2.5 rounded bg-amber-50 border border-amber-200 flex items-center justify-between" id="modalPenaltyBox">
+            <span class="text-slate-600 font-semibold" id="modalPenaltyLabel">Statutory Penalty Exposure (if unrectified):</span>
+            <span class="font-extrabold text-amber-700 text-sm" id="modalPenaltyDisplay">₹ 25,000</span>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1"><%= t('modalIdentifiedViolations') %></label>
+            <ul id="modalViolationsList" class="max-h-24 overflow-y-auto pl-4 list-disc bg-slate-50 p-2 rounded border border-slate-200"></ul>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1"><%= t('modalOfficerRemarks') %></label>
+            <textarea id="modalCustomNotes" rows="2" placeholder="<%= t('modalOfficerRemarksPlaceholder') %>" class="form-control form-control-sm text-xs rounded"></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer bg-slate-50 py-2.5 px-4 flex justify-between">
+          <button type="button" class="btn btn-secondary btn-sm text-xs" data-bs-dismiss="modal"><%= t('btnCancel') %></button>
+          <button type="submit" id="submitNoticeBtn" class="btn btn-warning btn-sm text-xs font-bold py-1.5 px-4 shadow">
+            <i class="fa-solid fa-paper-plane me-1"></i> <span id="submitNoticeBtnText">Dispatch Warning Notice to Manufacturer</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Load Chart.js CDN & Officer Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script id="officerChartDataJson" type="application/json"><%- JSON.stringify(chartData) %></script>
+<script>
+  try {
+    var _dataEl = document.getElementById("officerChartDataJson");
+    if (_dataEl) window.officerChartData = JSON.parse(_dataEl.textContent);
+  } catch (e) {
+    console.error("Error loading officerChartDataJson", e);
+  }
+</script>
+<script src="/js/officer-charts.js"></script>
+<script src="/js/notice-modal.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // 1. Populate heatmap width bars
+    document.querySelectorAll("[data-bar-width]").forEach(function (el) {
+      el.style.width = el.getAttribute("data-bar-width") + "%";
+    });
+
+    // 2. Wire notice modal buttons (Warning Notice & Show-Cause Notice)
+    document.querySelectorAll(".btn-open-notice-modal").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.getAttribute("data-id") || "";
+        var type = btn.getAttribute("data-type") || "WARNING";
+        var prod = btn.getAttribute("data-product") || "";
+        var mfr = btn.getAttribute("data-manufacturer") || "";
+        var viols = btn.getAttribute("data-violations") || "";
+        var penalty = parseInt(btn.getAttribute("data-penalty") || "25000", 10);
+        if (typeof openNoticeModal === "function") {
+          openNoticeModal(id, prod, mfr, viols, penalty, type);
+        }
+      });
+    });
+  });
+</script>
+
+<%- include('../partials/footer') %>

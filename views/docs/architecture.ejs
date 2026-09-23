@@ -1,0 +1,167 @@
+<%- include('../partials/header', { title: 'Technical Architecture & Deployment | Pack-Parikshak AI' }) %>
+<%- include('../partials/navbar') %>
+
+<main class="flex-grow py-10 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto w-full">
+  
+  <div class="mb-10 text-center max-w-3xl mx-auto">
+    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-govblue text-xs font-bold border border-blue-200 mb-3">
+      <i class="fa-solid fa-code-branch text-amber-500"></i> Technical Architecture & Hosting Guide
+    </div>
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+      Pack-Parikshak AI System Architecture
+    </h1>
+    <p class="text-xs sm:text-sm text-slate-600 mt-2 leading-relaxed">
+      Complete architectural blueprint covering Node.js MVC, Python PaddleOCR integration, geometric layout parsing, and unified single-command execution.
+    </p>
+  </div>
+
+  <!-- Architecture Flow Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+    
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+      <div class="w-10 h-10 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-lg mb-3">
+        <i class="fa-brands fa-node-js"></i>
+      </div>
+      <h3 class="font-bold text-sm text-slate-900 mb-1">1. Node.js & Express MVC</h3>
+      <p class="text-xs text-slate-600 leading-relaxed">
+        Powers the core application using Express 5. Implements full Model-View-Controller architecture with Passport.js authentication (Session & JWT), EJS templates, and multi-lingual localization across 10 Indian languages.
+      </p>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+      <div class="w-10 h-10 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center text-lg mb-3">
+        <i class="fa-brands fa-python"></i>
+      </div>
+      <h3 class="font-bold text-sm text-slate-900 mb-1">2. PaddleOCR Microservice</h3>
+      <p class="text-xs text-slate-600 leading-relaxed">
+        High-performance Python service powered by RapidOCR (PP-OCRv4 ONNX). Includes our custom geometric layout analyzer that reconstructs multi-column, scattered packaging labels with horizontal/vertical alignment algorithms.
+      </p>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+      <div class="w-10 h-10 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center text-lg mb-3">
+        <i class="fa-solid fa-database"></i>
+      </div>
+      <h3 class="font-bold text-sm text-slate-900 mb-1">3. MongoDB & Cloud Storage</h3>
+      <p class="text-xs text-slate-600 leading-relaxed">
+        Persists inspection logs, bounding box coordinates, and Section 36 statutory notices via Mongoose. Storage engine integrates Cloudinary with automatic fallback to local disk storage.
+      </p>
+    </div>
+
+  </div>
+
+  <!-- End-to-End Pipeline Diagram Box -->
+  <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 sm:p-8 mb-12">
+    <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider mb-6 flex items-center gap-2">
+      <i class="fa-solid fa-arrows-split-up-and-left text-amber-500"></i> End-to-End Verification Dataflow
+    </h3>
+
+    <div class="bg-slate-900 text-slate-200 p-6 rounded-xl font-mono text-xs overflow-x-auto leading-loose">
+[User / Officer Browser]
+       │
+       ▼ (1) Upload Label Image (Multipart/Form-Data)
+[Express Router: /inspections/upload]
+       │
+       ├──► (2) Storage: Cloudinary or Local Disk (/public/uploads)
+       │
+       ▼ (3) Call Python OCR Microservice (POST http://127.0.0.1:5000/api/ocr)
+[Flask / RapidOCR (PaddleOCR PP-OCRv4)]
+       │
+       ├──► (4) Text Detection & Recognition (ONNX Sub-second inference)
+       └──► (5) Spatial Layout Parser (Left-Key / Right-Value Binding & Regex)
+       │
+       ▼ (6) Returns JSON: Bounding Boxes + Structured Key-Values
+[Legal Metrology Rule Verification Engine (ruleEngine.js)]
+       │
+       ├──► Checks 8 Mandatory Declarations (Rules 6(1)(a)-(n) & Rule 7)
+       ├──► Strict SI Unit Validator (Flags non-standard 'gms', 'ltrs' under Rule 13)
+       └──► Computes Compliance Score (0-100%) & Section 36 Penalty
+       │
+       ▼ (7) Persists Inspection to MongoDB & Renders Interactive Sandbox
+[Interactive HTML5 Canvas Sandbox (/inspections/:id/sandbox)]
+       │
+       ├──► Bounding Boxes rendered dynamically on HTML5 Canvas
+       ├──► User / Officer can edit OCR misreadings & click "Re-Verify"
+       └──► Instant PDF Audit Report Generation via PDFKit
+    </div>
+  </div>
+
+  <!-- Render Deployment Guide -->
+  <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 sm:p-8 mb-12">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h2 class="text-xl font-bold text-slate-900">Render Deployment Blueprint (`render.yaml`)</h2>
+        <p class="text-xs text-slate-600 mt-0.5">Step-by-step production hosting on Render Cloud</p>
+      </div>
+      <span class="badge bg-purple-600 text-white text-xs px-2.5 py-1">Render Ready</span>
+    </div>
+
+    <div class="space-y-4 text-xs text-slate-700 leading-relaxed">
+      <p>
+        Pack-Parikshak AI is engineered to run seamlessly on <strong>Render.com</strong> using our provided unified launcher or a multi-service blueprint.
+      </p>
+
+      <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+        <h4 class="font-bold text-slate-900">Option A: Unified Single Web Service (Recommended)</h4>
+        <ol class="list-decimal pl-4 space-y-1.5 text-slate-600">
+          <li>Create a new <strong>Web Service</strong> on Render linked to your repository.</li>
+          <li>Set <strong>Environment</strong> to <code>Node</code>.</li>
+          <li>Set <strong>Build Command</strong>: <code>npm install && pip install -r python_ocr/requirements.txt</code></li>
+          <li>Set <strong>Start Command</strong>: <code>node app.js</code></li>
+          <li>Add the environment variables listed below in the Render dashboard.</li>
+        </ol>
+      </div>
+
+      <div class="space-y-2">
+        <h4 class="font-bold text-slate-900">Mandatory Environment Variables on Render:</h4>
+        <div class="overflow-x-auto">
+          <table class="table table-sm text-xs mb-0">
+            <thead class="bg-slate-100 text-slate-700 font-bold">
+              <tr>
+                <th class="py-1.5">Variable Name</th>
+                <th class="py-1.5">Sample Value</th>
+                <th class="py-1.5">Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="font-mono font-bold text-govblue">MONGODB_URI</td>
+                <td class="font-mono text-slate-500">mongodb+srv://user:pass@cluster.mongodb.net/pack_parikshak</td>
+                <td>MongoDB Atlas connection string</td>
+              </tr>
+              <tr>
+                <td class="font-mono font-bold text-govblue">SESSION_SECRET</td>
+                <td class="font-mono text-slate-500">super_secret_session_key_2026</td>
+                <td>Express session encryption secret</td>
+              </tr>
+              <tr>
+                <td class="font-mono font-bold text-govblue">JWT_SECRET</td>
+                <td class="font-mono text-slate-500">super_secret_jwt_key_2026</td>
+                <td>JWT signing key for REST APIs</td>
+              </tr>
+              <tr>
+                <td class="font-mono font-bold text-govblue">CLOUDINARY_CLOUD_NAME</td>
+                <td class="font-mono text-slate-500">your_cloudinary_name</td>
+                <td>Cloudinary image storage (optional)</td>
+              </tr>
+              <tr>
+                <td class="font-mono font-bold text-govblue">CLOUDINARY_API_KEY</td>
+                <td class="font-mono text-slate-500">your_api_key</td>
+                <td>Cloudinary API Key (optional)</td>
+              </tr>
+              <tr>
+                <td class="font-mono font-bold text-govblue">CLOUDINARY_API_SECRET</td>
+                <td class="font-mono text-slate-500">your_api_secret</td>
+                <td>Cloudinary Secret (optional)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<%- include('../partials/footer') %>
+

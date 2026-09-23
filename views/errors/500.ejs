@@ -1,0 +1,20 @@
+<%- include('../partials/header', { title: '500 Server Error | Pack-Parikshak AI' }) %>
+<%- include('../partials/navbar') %>
+
+<main class="flex-grow flex items-center justify-center py-16 px-4">
+  <div class="max-w-md w-full text-center bg-white p-8 rounded-xl shadow-sm border border-slate-200">
+    <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">
+      <i class="fa-solid fa-server"></i>
+    </div>
+    <h1 class="text-2xl font-extrabold text-slate-900 mb-2">500 - Server Error</h1>
+    <p class="text-sm text-slate-600 mb-6">
+      <%= typeof message !== 'undefined' ? message : 'An unexpected error occurred in the compliance inspection system.' %>
+    </p>
+    <a href="/" class="btn btn-primary bg-govblue border-govblue text-xs font-semibold py-2 px-6">
+      Return to Home Portal
+    </a>
+  </div>
+</main>
+
+<%- include('../partials/footer') %>
+

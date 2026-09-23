@@ -1,0 +1,85 @@
+<%- include('../partials/header', { title: (activeRole === 'officer' ? t('loginOfficerHeader') : t('loginUserHeader')) + ' | ' + t('portalName') }) %>
+<%- include('../partials/navbar') %>
+
+<main class="flex-grow flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-md w-full space-y-6">
+    
+    <!-- Top Emblem Card Header -->
+    <div class="text-center">
+      <div class="w-14 h-14 bg-govblue text-amber-400 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-md text-2xl font-bold">
+        <i class="fa-solid fa-scale-balanced"></i>
+      </div>
+      <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight" id="loginHeaderTitle">
+        <%= activeRole === 'officer' ? t('loginOfficerHeader') : t('loginUserHeader') %>
+      </h2>
+      <p class="text-xs text-slate-500 mt-1">
+        <%= activeRole === 'officer' ? t('loginOfficerSub') : t('loginUserSub') %>
+      </p>
+    </div>
+
+    <!-- Alert / Messages -->
+    <% if (typeof errorMessage !== 'undefined' && errorMessage) { %>
+      <div class="bg-red-50 border-l-4 border-red-500 p-3 rounded text-xs text-red-700">
+        <i class="fa-solid fa-circle-exclamation me-1"></i> <%= errorMessage %>
+      </div>
+    <% } %>
+    <% if (typeof infoMessage !== 'undefined' && infoMessage) { %>
+      <div class="bg-blue-50 border-l-4 border-blue-500 p-3 rounded text-xs text-blue-700">
+        <i class="fa-solid fa-circle-info me-1"></i> <%= infoMessage %>
+      </div>
+    <% } %>
+
+    <!-- Real User / Officer Role Switcher Tabs -->
+    <div class="flex rounded-xl p-1 bg-slate-200/80 border border-slate-300 shadow-xs">
+      <a href="/auth/login?role=user<%= typeof returnTo !== 'undefined' && returnTo ? '&returnTo=' + encodeURIComponent(returnTo) : '' %>" class="flex-1 text-center py-2 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 <%= activeRole !== 'officer' ? 'bg-white text-govblue shadow-sm' : 'text-slate-600 hover:text-slate-900' %>">
+        <i class="fa-solid fa-user"></i> <%= t('roleConsumer') %>
+      </a>
+      <a href="/auth/login?role=officer<%= typeof returnTo !== 'undefined' && returnTo ? '&returnTo=' + encodeURIComponent(returnTo) : '' %>" class="flex-1 text-center py-2 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 <%= activeRole === 'officer' ? 'bg-govblue text-white shadow-sm' : 'text-slate-600 hover:text-slate-900' %>">
+        <i class="fa-solid fa-shield-halved text-amber-400"></i> <%= t('roleOfficer') %>
+      </a>
+    </div>
+
+    <!-- Main Login Form -->
+    <div class="bg-white py-8 px-6 shadow-sm rounded-xl border border-slate-200">
+      <form action="/auth/login" method="POST" class="space-y-4">
+        <input type="hidden" name="returnTo" value="<%= typeof returnTo !== 'undefined' ? returnTo : '' %>">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">
+            <%= activeRole === 'officer' ? t('officerEmailLabel') : t('emailLabel') %>
+          </label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-xs">
+              <i class="fa-solid fa-envelope"></i>
+            </span>
+            <input type="email" name="email" required 
+              placeholder="<%= activeRole === 'officer' ? 'officer@delhi.lm.gov.in' : 'consumer@example.com' %>"
+              class="form-control text-xs pl-9 py-2 border-slate-300 focus:border-govblue focus:ring-govblue rounded-lg">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1"><%= t('passwordLabel') %></label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-xs">
+              <i class="fa-solid fa-lock"></i>
+            </span>
+            <input type="password" name="password" required placeholder="••••••••"
+              class="form-control text-xs pl-9 py-2 border-slate-300 focus:border-govblue focus:ring-govblue rounded-lg">
+          </div>
+        </div>
+
+        <button type="submit" class="w-full btn bg-govblue hover:bg-govblue-dark text-white font-bold text-xs py-2.5 rounded-lg shadow transition">
+          <i class="fa-solid fa-arrow-right-to-bracket me-1"></i> <%= t('btnSignIn') %>
+        </button>
+      </form>
+
+      <div class="mt-6 pt-4 border-t border-slate-100 text-center text-xs text-slate-500">
+        <%= t('newToPortal') %>
+        <a href="/auth/register<%= (activeRole === 'officer' ? '?role=officer' : '') + (typeof returnTo !== 'undefined' && returnTo ? (activeRole === 'officer' ? '&returnTo=' : '?returnTo=') + encodeURIComponent(returnTo) : '') %>" class="text-govblue-light font-bold hover:underline"><%= t('registerLink') %></a>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<%- include('../partials/footer') %>

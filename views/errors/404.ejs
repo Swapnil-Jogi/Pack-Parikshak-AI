@@ -1,0 +1,20 @@
+<%- include('../partials/header', { title: '404 Not Found | Pack-Parikshak AI' }) %>
+<%- include('../partials/navbar') %>
+
+<main class="flex-grow flex items-center justify-center py-16 px-4">
+  <div class="max-w-md w-full text-center bg-white p-8 rounded-xl shadow-sm border border-slate-200">
+    <div class="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+    </div>
+    <h1 class="text-2xl font-extrabold text-slate-900 mb-2">404 - Document Not Found</h1>
+    <p class="text-sm text-slate-600 mb-6">
+      <%= typeof message !== 'undefined' ? message : 'The requested inspection record or legal document could not be located.' %>
+    </p>
+    <a href="/" class="btn btn-primary bg-govblue border-govblue text-xs font-semibold py-2 px-6">
+      Return to Home Portal
+    </a>
+  </div>
+</main>
+
+<%- include('../partials/footer') %>
+

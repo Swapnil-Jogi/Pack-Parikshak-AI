@@ -1,0 +1,153 @@
+/* Pack-Parikshak AI Custom Stylesheet */
+
+:root {
+  --gov-blue: #0f2e5a;
+  --gov-blue-dark: #081d3a;
+  --gov-blue-light: #1e40af;
+  --gov-saffron: #f97316;
+  --gov-green: #15803d;
+}
+
+body {
+  font-family: 'Inter', 'Noto Sans Devanagari', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: #f8fafc;
+  color: #0f172a;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Smooth Interactive Elements */
+a, button, .btn {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+/* Navbar Interactive Tab Clicking & Outline Effect */
+.nav-link-item {
+  position: relative;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: 2px solid transparent !important;
+  outline-offset: 2px !important;
+  cursor: pointer;
+  user-select: none;
+}
+
+.nav-link-item:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+  color: #ffffff !important;
+}
+
+/* Distinct outline and clicking depression effect */
+.nav-link-item:active,
+.nav-link-item:focus-visible,
+.nav-link-item.tab-clicked {
+  outline: 2px solid #f59e0b !important; /* Gold/Amber Government Glow Outline */
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.35) !important;
+  transform: scale(0.96) !important;
+}
+
+/* Card Elevations and Alignment */
+.hover-lift {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.hover-lift:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 24px -6px rgba(15, 23, 42, 0.08), 0 4px 6px -2px rgba(15, 23, 42, 0.04);
+}
+
+/* Dropdown Menu Animations */
+.dropdown-menu {
+  animation: dropdownFade 0.15s cubic-bezier(0, 0, 0.2, 1);
+  transform-origin: top right;
+}
+
+@keyframes dropdownFade {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Canvas Sandbox Container */
+.canvas-wrapper {
+  position: relative;
+  background-color: #0f172a;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+#ocrCanvas {
+  display: block;
+  max-width: 100%;
+  cursor: crosshair;
+  margin: 0 auto;
+}
+
+/* Tooltip over canvas */
+.canvas-tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: rgba(15, 23, 42, 0.95);
+  color: #ffffff;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  border: 1px solid #f97316;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+  z-index: 50;
+  display: none;
+  max-width: 280px;
+}
+
+/* Status Badges */
+.badge-pass {
+  background-color: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.badge-fail {
+  background-color: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.badge-warning {
+  background-color: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+/* Selected row highlight linked to canvas box */
+.table-row-highlight {
+  background-color: #ffedd5 !important;
+  transition: background-color 0.2s ease;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}

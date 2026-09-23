@@ -1,0 +1,220 @@
+<%- include('../partials/header', { title: (typeof activeRole !== 'undefined' && activeRole === 'officer' ? 'Enforcement Officer Registration' : t('createAccountTitle')) + ' | ' + t('portalName') }) %>
+<%- include('../partials/navbar') %>
+
+<main class="flex-grow flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-lg w-full space-y-6">
+    
+    <div class="text-center">
+      <div class="w-14 h-14 bg-govblue text-amber-400 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-md text-2xl font-bold">
+        <i class="fa-solid fa-user-shield"></i>
+      </div>
+      <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight" id="regHeaderTitle">
+        <%= typeof activeRole !== 'undefined' && activeRole === 'officer' ? 'Enforcement Officer Registration' : t('createAccountTitle') %>
+      </h2>
+      <p class="text-xs text-slate-500 mt-1" id="regHeaderSub">
+        <%= typeof activeRole !== 'undefined' && activeRole === 'officer' ? 'Official Legal Metrology regulatory credentials for inspectors and enforcement authorities' : t('createAccountSubtitle') %>
+      </p>
+    </div>
+
+    <% if (typeof errorMessage !== 'undefined' && errorMessage) { %>
+      <div class="bg-red-50 border-l-4 border-red-500 p-3 rounded text-xs text-red-700">
+        <i class="fa-solid fa-circle-exclamation me-1"></i> <%= errorMessage %>
+      </div>
+    <% } %>
+    <% if (typeof infoMessage !== 'undefined' && infoMessage) { %>
+      <div class="bg-blue-50 border-l-4 border-blue-500 p-3 rounded text-xs text-blue-700">
+        <i class="fa-solid fa-circle-info me-1"></i> <%= infoMessage %>
+      </div>
+    <% } %>
+
+    <!-- Single Unified Role Switcher Tabs (Matches Login page design) -->
+    <div class="flex rounded-xl p-1 bg-slate-200/80 border border-slate-300 shadow-xs mb-2">
+      <a href="/auth/register?role=user<%= typeof returnTo !== 'undefined' && returnTo ? '&returnTo=' + encodeURIComponent(returnTo) : '' %>" id="tabRoleUser" role="button" class="flex-1 text-center py-2.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer no-underline <%= (typeof activeRole === 'undefined' || activeRole !== 'officer') ? 'bg-white text-govblue shadow-sm' : 'text-slate-600 hover:text-slate-900' %>">
+        <i class="fa-solid fa-user"></i> <%= t('roleConsumer') %>
+      </a>
+      <a href="/auth/register?role=officer<%= typeof returnTo !== 'undefined' && returnTo ? '&returnTo=' + encodeURIComponent(returnTo) : '' %>" id="tabRoleOfficer" role="button" class="flex-1 text-center py-2.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer no-underline <%= (typeof activeRole !== 'undefined' && activeRole === 'officer') ? 'bg-govblue text-white shadow-sm' : 'text-slate-600 hover:text-slate-900' %>">
+        <i class="fa-solid fa-shield-halved text-amber-400"></i> <%= t('roleOfficer') %>
+      </a>
+    </div>
+
+    <div class="bg-white py-8 px-6 shadow-sm rounded-xl border border-slate-200">
+      <form action="/auth/register" method="POST" class="space-y-4" id="registerForm">
+        <input type="hidden" name="returnTo" value="<%= typeof returnTo !== 'undefined' ? returnTo : '' %>">
+        <input type="hidden" name="role" id="inputRoleHidden" value="<%= typeof activeRole !== 'undefined' && activeRole === 'officer' ? 'officer' : 'user' %>">
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1"><%= t('fullNameLabel') %> <span class="text-red-500">*</span></label>
+          <input type="text" name="name" required minlength="2" maxlength="100" placeholder="Shri Rajesh Kumar"
+            class="form-control text-xs py-2 border-slate-300 rounded-lg">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1"><%= t('emailLabel') %> <span class="text-red-500">*</span></label>
+          <input type="email" name="email" required placeholder="<%= typeof activeRole !== 'undefined' && activeRole === 'officer' ? 'officer@delhi.lm.gov.in' : 'user@domain.in' %>"
+            class="form-control text-xs py-2 border-slate-300 rounded-lg">
+        </div>
+
+        <!-- Conditional Officer Fields -->
+        <div id="officerFields" class="<%= (typeof activeRole !== 'undefined' && activeRole === 'officer') ? '' : 'hidden' %> space-y-3 bg-amber-50/60 p-3 rounded-lg border border-amber-200">
+          <div>
+            <label class="block text-xs font-semibold text-amber-900 mb-1"><%= t('badgeIdLabel') %> <span class="text-red-500">*</span></label>
+            <input type="text" name="badgeId" id="inputBadgeId" placeholder="DL-LM-0842" maxlength="50" value="<%= typeof activeRole !== 'undefined' && activeRole === 'officer' ? 'DL-LM-0842' : '' %>"
+              class="form-control text-xs py-2 border-amber-300 rounded-lg">
+            <span class="text-[10px] text-amber-700">Official Inspector Badge ID issued by Directorate of Legal Metrology</span>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-amber-900 mb-1"><%= t('deptLabel') %></label>
+            <input type="text" name="department" id="inputDepartment" maxlength="200" value="Legal Metrology Enforcement Wing, Directorate of Legal Metrology"
+              class="form-control text-xs py-2 border-amber-300 rounded-lg">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1"><%= t('jurisdictionLabel') %></label>
+            <select name="state" class="form-select text-xs py-2 border-slate-300 rounded-lg">
+              <option value="Delhi">Delhi</option>
+              <option value="Maharashtra">Maharashtra</option>
+              <option value="Karnataka">Karnataka</option>
+              <option value="Gujarat">Gujarat</option>
+              <option value="Tamil Nadu">Tamil Nadu</option>
+              <option value="Uttar Pradesh">Uttar Pradesh</option>
+              <option value="West Bengal">West Bengal</option>
+              <option value="Punjab">Punjab</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1"><%= t('phoneLabel') %></label>
+            <input type="tel" name="phone" pattern="[0-9+\-\s()]{7,20}" title="7 to 20 digits phone number" placeholder="+91 9876543210"
+              class="form-control text-xs py-2 border-slate-300 rounded-lg">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1"><%= t('passwordLabel') %> <span class="text-red-500">*</span></label>
+            <input type="password" name="password" required minlength="6" maxlength="128" placeholder="••••••••"
+              class="form-control text-xs py-2 border-slate-300 rounded-lg">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1"><%= t('confirmPasswordLabel') %> <span class="text-red-500">*</span></label>
+            <input type="password" name="confirmPassword" required minlength="6" maxlength="128" placeholder="••••••••"
+              class="form-control text-xs py-2 border-slate-300 rounded-lg">
+          </div>
+        </div>
+
+        <button type="submit" id="btnSubmitRegister" class="w-full btn bg-govblue hover:bg-govblue-dark text-white font-bold text-xs py-2.5 rounded-lg shadow transition mt-2">
+          <% if (typeof activeRole !== 'undefined' && activeRole === 'officer') { %>
+            <i class="fa-solid fa-shield-halved text-amber-400 me-1"></i> Register Official Enforcement Officer
+          <% } else { %>
+            <i class="fa-solid fa-check me-1"></i> <%= t('btnRegister') %>
+          <% } %>
+        </button>
+      </form>
+
+      <div class="mt-6 pt-4 border-t border-slate-100 text-center text-xs text-slate-500">
+        <%= t('haveAccount') %>
+        <a id="linkSignIn" href="/auth/login<%= (typeof activeRole !== 'undefined' && activeRole === 'officer' ? '?role=officer' : '') + (typeof returnTo !== 'undefined' && returnTo ? ((typeof activeRole !== 'undefined' && activeRole === 'officer') ? '&returnTo=' : '?returnTo=') + encodeURIComponent(returnTo) : '') %>" class="text-govblue-light font-bold hover:underline"><%= t('signInHere') %></a>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+  function switchRole(role) {
+    const hiddenRole = document.getElementById("inputRoleHidden");
+    const officerFields = document.getElementById("officerFields");
+    const tabUser = document.getElementById("tabRoleUser");
+    const tabOfficer = document.getElementById("tabRoleOfficer");
+    const btnSubmit = document.getElementById("btnSubmitRegister");
+    const badgeInput = document.getElementById("inputBadgeId");
+    const headerTitle = document.getElementById("regHeaderTitle");
+    const headerSub = document.getElementById("regHeaderSub");
+    const linkSignIn = document.getElementById("linkSignIn");
+
+    if (hiddenRole) hiddenRole.value = role;
+
+    if (role === "officer") {
+      if (officerFields) officerFields.classList.remove("hidden");
+      if (tabUser) {
+        tabUser.classList.remove("bg-white", "text-govblue", "shadow-sm");
+        tabUser.classList.add("text-slate-600", "hover:text-slate-900");
+      }
+      if (tabOfficer) {
+        tabOfficer.classList.add("bg-govblue", "text-white", "shadow-sm");
+        tabOfficer.classList.remove("text-slate-600", "hover:text-slate-900");
+      }
+      if (btnSubmit) btnSubmit.innerHTML = '<i class="fa-solid fa-shield-halved text-amber-400 me-1"></i> Register Official Enforcement Officer';
+      if (headerTitle) headerTitle.innerText = "Enforcement Officer Registration";
+      if (headerSub) headerSub.innerText = "Official Legal Metrology regulatory credentials for inspectors and enforcement authorities";
+      if (badgeInput && !badgeInput.value) badgeInput.value = 'DL-LM-' + Math.floor(1000 + Math.random() * 9000);
+      if (linkSignIn) linkSignIn.href = '/auth/login?role=officer';
+      try {
+        const url = new URL(window.location);
+        url.searchParams.set('role', 'officer');
+        window.history.replaceState({}, '', url);
+      } catch (e) {}
+    } else {
+      if (officerFields) officerFields.classList.add("hidden");
+      if (tabOfficer) {
+        tabOfficer.classList.remove("bg-govblue", "text-white", "shadow-sm");
+        tabOfficer.classList.add("text-slate-600", "hover:text-slate-900");
+      }
+      if (tabUser) {
+        tabUser.classList.add("bg-white", "text-govblue", "shadow-sm");
+        tabUser.classList.remove("text-slate-600", "hover:text-slate-900");
+      }
+      if (btnSubmit) btnSubmit.innerHTML = '<i class="fa-solid fa-check me-1"></i> <%= t("btnRegister") %>';
+      if (headerTitle) headerTitle.innerText = "<%= t('createAccountTitle') %>";
+      if (headerSub) headerSub.innerText = "<%= t('createAccountSubtitle') %>";
+      if (linkSignIn) linkSignIn.href = '/auth/login?role=user';
+      try {
+        const url = new URL(window.location);
+        url.searchParams.set('role', 'user');
+        window.history.replaceState({}, '', url);
+      } catch (e) {}
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const tabUser = document.getElementById("tabRoleUser");
+    const tabOfficer = document.getElementById("tabRoleOfficer");
+
+    if (tabUser) {
+      tabUser.addEventListener("click", function (e) {
+        e.preventDefault();
+        switchRole("user");
+      });
+    }
+
+    if (tabOfficer) {
+      tabOfficer.addEventListener("click", function (e) {
+        e.preventDefault();
+        switchRole("officer");
+      });
+    }
+
+    const regForm = document.getElementById("registerForm");
+    if (regForm) {
+      regForm.addEventListener("submit", function (e) {
+        const pwd = document.querySelector('input[name="password"]').value;
+        const confirmPwd = document.querySelector('input[name="confirmPassword"]').value;
+        if (pwd !== confirmPwd) {
+          e.preventDefault();
+          alert("Passwords do not match. Please verify both password fields.");
+          document.querySelector('input[name="confirmPassword"]').focus();
+          return;
+        }
+        if (pwd.length < 6) {
+          e.preventDefault();
+          alert("Password must be at least 6 characters long.");
+          document.querySelector('input[name="password"]').focus();
+          return;
+        }
+      });
+    }
+  });
+</script>
+
+<%- include('../partials/footer') %>

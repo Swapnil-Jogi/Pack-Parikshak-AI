@@ -211,6 +211,13 @@ async function getSystemHealth() {
   const mem = process.memoryUsage();
   const formatMb = (bytes) => `${(bytes / 1024 / 1024).toFixed(2)} MB`;
 
+  const mongoConfigured = Boolean(process.env.MONGODB_URI && !process.env.MONGODB_URI.includes("127.0.0.1") && !process.env.MONGODB_URI.includes("localhost"));
+  const dbHint = dbStatus === "connected"
+    ? "Database operational"
+    : (!mongoConfigured && isProd
+        ? "MONGODB_URI is not set in Render. In Render Dashboard -> Environment, add MONGODB_URI with your MongoDB Atlas connection string."
+        : "Database disconnected. Check MongoDB Atlas Network Access (whitelist 0.0.0.0/0) and credentials.");
+
   return {
     status: dbStatus === "connected" && ocrHealthy ? "healthy" : "degraded",
     timestamp: new Date().toISOString(),
@@ -221,7 +228,8 @@ async function getSystemHealth() {
       database: {
         status: dbStatus,
         host: mongoose.connection.host || "unknown",
-        name: mongoose.connection.name || "pack_parikshak"
+        name: mongoose.connection.name || "pack_parikshak",
+        hint: dbHint
       },
       ocrMicroservice: {
         status: ocrHealthy ? "healthy" : "offline",

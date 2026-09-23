@@ -218,6 +218,8 @@ async function getSystemHealth() {
         ? "MONGODB_URI is not set in Render. In Render Dashboard -> Environment, add MONGODB_URI with your MongoDB Atlas connection string."
         : "Database disconnected. Check MongoDB Atlas Network Access (whitelist 0.0.0.0/0) and credentials.");
 
+  const lastDbError = connectDB.getLastError ? connectDB.getLastError() : null;
+
   return {
     status: dbStatus === "connected" && ocrHealthy ? "healthy" : "degraded",
     timestamp: new Date().toISOString(),
@@ -229,6 +231,7 @@ async function getSystemHealth() {
         status: dbStatus,
         host: mongoose.connection.host || "unknown",
         name: mongoose.connection.name || "pack_parikshak",
+        error: lastDbError || undefined,
         hint: dbHint
       },
       ocrMicroservice: {

@@ -145,17 +145,22 @@ app.use("/api/scan", scanLimiter);
 app.use("/api", apiLimiter);
 
 // 5. Session Configuration with Persistent MongoDB Store
+const sessionStore = MongoStore.create({
+  mongoUrl: mongoUri,
+  collectionName: "sessions",
+  ttl: 7 * 24 * 60 * 60, // 7 days in seconds
+  autoRemove: "native"
+});
+sessionStore.on("error", (err) => {
+  console.warn("[Session-Store] Persistent store connection warning:", err.message);
+});
+
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "pack_parikshak_secret_key_gov_ai_2026",
     resave: false,
     saveUninitialized: false,
-    store: MongoStore.create({
-      mongoUrl: mongoUri,
-      collectionName: "sessions",
-      ttl: 7 * 24 * 60 * 60, // 7 days in seconds
-      autoRemove: "native"
-    }),
+    store: sessionStore,
     cookie: {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       httpOnly: true,

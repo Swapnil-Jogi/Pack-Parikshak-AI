@@ -45,12 +45,12 @@ COPY . .
 # Ensure storage directories exist
 RUN mkdir -p public/uploads
 
-# Expose Web Portal Port
-EXPOSE 8080
+# Expose Web Portal Ports (8080 for standard / compose, 10000 for Render)
+EXPOSE 8080 10000
 
 # Docker health check probe against the production /api/health endpoint
 HEALTHCHECK --interval=30s --timeout=10s --start-period=35s --retries=3 \
-    CMD curl -f http://localhost:8080/api/health || exit 1
+    CMD curl -f http://localhost:${PORT:-8080}/api/health || exit 1
 
 # Start Unified Node.js Server & Python Microservice
 CMD ["node", "app.js"]

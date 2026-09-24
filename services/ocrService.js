@@ -45,51 +45,56 @@ class OcrService {
         return response.data;
       }
     } catch (httpErr) {
-      console.warn(`[OCR-Service] Microservice HTTP call failed (${httpErr.message}). Falling back to standalone Python execution...`);
+      console.warn(`[OCR-Service] Microservice HTTP call failed (${httpErr.message}).`);
     }
 
-    // 3. Fallback: Execute Python standalone script directly with single-thread memory limits
-    try {
-      const standaloneResult = await new Promise((resolve, reject) => {
-        const pythonCmd = process.platform === "win32" ? "python" : "python3";
-        execFile(
-          pythonCmd,
-          [this.standaloneScriptPath, imagePath],
-          {
-            maxBuffer: 10 * 1024 * 1024,
-            timeout: 60000,
-            env: {
-              ...process.env,
-              OMP_NUM_THREADS: "1",
-              OPENBLAS_NUM_THREADS: "1",
-              MKL_NUM_THREADS: "1",
-              VECLIB_MAXIMUM_THREADS: "1",
-              NUMEXPR_NUM_THREADS: "1",
-              ONNXRUNTIME_INTR_OP_NUM_THREADS: "1"
-            }
-          },
-          (error, stdout, stderr) => {
-            if (error) {
-              console.error("[OCR-Service] Standalone execution error:", stderr || error.message);
-              return reject(new Error(`OCR processing failed: ${stderr || error.message}`));
-            }
-
-            try {
-              const parsed = JSON.parse(stdout.trim());
-              if (!parsed.success) {
-                return reject(new Error(parsed.error || "OCR failed to parse image"));
+    // 3. Fallback: On local development, attempt standalone execution;
+    // In production, avoid spawning duplicate Python processes to prevent memory ceiling violations
+    if (process.env.NODE_ENV !== "production") {
+      try {
+        const standaloneResult = await new Promise((resolve, reject) => {
+          const pythonCmd = process.platform === "win32" ? "python" : "python3";
+          execFile(
+            pythonCmd,
+            [this.standaloneScriptPath, imagePath],
+            {
+              maxBuffer: 10 * 1024 * 1024,
+              timeout: 60000,
+              env: {
+                ...process.env,
+                OMP_NUM_THREADS: "1",
+                OPENBLAS_NUM_THREADS: "1",
+                MKL_NUM_THREADS: "1",
+                VECLIB_MAXIMUM_THREADS: "1",
+                NUMEXPR_NUM_THREADS: "1",
+                ONNXRUNTIME_INTR_OP_NUM_THREADS: "1"
               }
-              resolve(parsed);
-            } catch (jsonErr) {
-              console.error("[OCR-Service] JSON parse error of Python stdout:", stdout);
-              reject(new Error("Invalid response format from OCR engine"));
-            }
-          }
-        );
-      });
+            },
+            (error, stdout, stderr) => {
+              if (error) {
+                console.error("[OCR-Service] Standalone execution error:", stderr || error.message);
+                return reject(new Error(`OCR processing failed: ${stderr || error.message}`));
+              }
 
-      return standaloneResult;
-    } catch (fallbackErr) {
+              try {
+                const parsed = JSON.parse(stdout.trim());
+                if (!parsed.success) {
+                  return reject(new Error(parsed.error || "OCR failed to parse image"));
+                }
+                resolve(parsed);
+              } catch (jsonErr) {
+                console.error("[OCR-Service] JSON parse error of Python stdout:", stdout);
+                reject(new Error("Invalid response format from OCR engine"));
+              }
+            }
+          );
+        });
+
+        return standaloneResult;
+      } catch (fallbackErr) {
+        console.warn(`[OCR-Service] Standalone execution encountered error: ${fallbackErr.message}`);
+      }
+    }
       console.warn(`[OCR-Service] Both microservice and standalone execution encountered errors: ${fallbackErr.message}. Generating resilient fallback sandbox record.`);
       // 4. Resilient Fallback: Never crash the user request or 502 Render container
       return {

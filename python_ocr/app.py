@@ -39,25 +39,31 @@ CORS(app)
 
 print("[Python-OCR] Initializing PaddleOCR / RapidOCR ONNX Engine with low-memory single-thread settings...", flush=True)
 try:
-    # Tuned parameters for diverse packaging fonts (condensed, script, dot-matrix, thin strokes)
+    # Optimized parameters for low-memory container environments (512MB RAM ceiling)
+    # Disabling angle classifier saves ~60MB RAM by preventing cls ONNX model loading
     ocr_engine = RapidOCR(
-        text_score=0.35,      # Lower score threshold ensures stylized fonts aren't discarded
-        use_angle_cls=True    # Rotate sideways/angled text automatically
+        text_score=0.35,
+        use_angle_cls=False
     )
-    # Tune detector parameters for packaging labels & cap max side length to 960px
+    # Tune detector parameters for packaging labels & cap max side length to 736px
     if hasattr(ocr_engine, 'text_detector'):
-        ocr_engine.text_detector.limit_side_len = 960
+        ocr_engine.text_detector.limit_side_len = 736
         ocr_engine.text_detector.limit_type = 'max'
         if hasattr(ocr_engine.text_detector, 'postprocess_op'):
-            ocr_engine.text_detector.postprocess_op.unclip_ratio = 1.9  # Expand polygon to avoid clipping ascenders/descenders
-            ocr_engine.text_detector.postprocess_op.box_thresh = 0.45   # Catch faint or thin-font text lines
+            ocr_engine.text_detector.postprocess_op.unclip_ratio = 1.9
+            ocr_engine.text_detector.postprocess_op.box_thresh = 0.45
     layout_parser = PackagingLayoutParser()
-    print("[Python-OCR] Low-memory PaddleOCR Engine initialized and ready.", flush=True)
+    print("[Python-OCR] Ultra-low-memory PaddleOCR Engine initialized and ready.", flush=True)
 
-    # Pre-warm ONNX execution graphs with dummy image to eliminate cold-start inference latency
+    # Pre-warm detector and recognizer ONNX graphs with a tiny text image
     try:
-        dummy_img = np.zeros((128, 128, 3), dtype=np.uint8)
-        ocr_engine(dummy_img)
+        from PIL import ImageDraw
+        warmup_pil = Image.new('RGB', (100, 36), color=(255, 255, 255))
+        d = ImageDraw.Draw(warmup_pil)
+        d.text((5, 5), "LM 2011", fill=(0, 0, 0))
+        ocr_engine(np.array(warmup_pil))
+        del warmup_pil, d
+        gc.collect()
         print("[Python-OCR] ONNX runtime execution graphs warmed up and ready for instant inference.", flush=True)
     except Exception as warm_err:
         pass

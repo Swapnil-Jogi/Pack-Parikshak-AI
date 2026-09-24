@@ -5,13 +5,20 @@
 
 FROM node:20-bookworm-slim
 
-# Set core production environment variables
+# Set core production environment variables with strict memory bounds (Render 512MB RAM)
 ENV NODE_ENV=production \
     PORT=8080 \
     PYTHON_OCR_PORT=5000 \
     PYTHON_OCR_HOST=127.0.0.1 \
     PYTHONUNBUFFERED=1 \
-    DEBIAN_FRONTEND=noninteractive
+    DEBIAN_FRONTEND=noninteractive \
+    NODE_OPTIONS="--max-old-space-size=96" \
+    OMP_NUM_THREADS=1 \
+    OPENBLAS_NUM_THREADS=1 \
+    MKL_NUM_THREADS=1 \
+    VECLIB_MAXIMUM_THREADS=1 \
+    NUMEXPR_NUM_THREADS=1 \
+    ONNXRUNTIME_INTR_OP_NUM_THREADS=1
 
 # Install Python 3, virtual environment, and system libraries required by OpenCV & ONNX Runtime
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -53,5 +60,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=35s --retries=3 \
     CMD curl -f http://localhost:${PORT:-8080}/api/health || exit 1
 
 # Start Unified Node.js Server & Python Microservice
-CMD ["node", "app.js"]
+CMD ["node", "--max-old-space-size=96", "app.js"]
 

@@ -15,6 +15,7 @@ const axios = require("axios");
 const mongoose = require("mongoose");
 
 const connectDB = require("./config/db");
+const { autoSeedIfEmpty } = require("./seed");
 const { i18nMiddleware } = require("./config/i18n");
 
 // Initialize Express App
@@ -30,8 +31,11 @@ if (isProd) {
   app.set("trust proxy", 1);
 }
 
-// Connect Database
+// Connect Database & Ensure Demonstration Records are Seeded
 connectDB();
+mongoose.connection.on("connected", () => {
+  autoSeedIfEmpty().catch((e) => console.warn("[Auto-Seed] Auto-seed notice:", e.message));
+});
 
 // Passport Configuration
 require("./config/passport")(passport);

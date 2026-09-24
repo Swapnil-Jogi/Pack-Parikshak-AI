@@ -6,7 +6,18 @@ const PdfService = require("../services/pdfService");
 // Render Officer Command Hub
 exports.getDashboard = async (req, res) => {
   try {
-    const inspections = await Inspection.find().sort({ createdAt: -1 });
+    let inspections = await Inspection.find().sort({ createdAt: -1 });
+
+    // If database has 0 inspections, auto-seed realistic sample products on the fly
+    if (inspections.length === 0) {
+      try {
+        const { autoSeedIfEmpty } = require("../seed");
+        await autoSeedIfEmpty();
+        inspections = await Inspection.find().sort({ createdAt: -1 });
+      } catch (seedErr) {
+        console.warn("[Officer] Auto-seed check notice:", seedErr.message);
+      }
+    }
 
     const totalInspections = inspections.length;
     const compliantCount = inspections.filter((i) => i.complianceStatus === "COMPLIANT").length;
@@ -60,8 +71,8 @@ exports.getDashboard = async (req, res) => {
       violationRate: Math.round((stateHeatmap[st].violations / stateHeatmap[st].total) * 100)
     })).sort((a, b) => b.violations - a.violations);
 
-    // Official inspection queue (pending review or violations)
-    const queue = inspections.filter((i) => i.officerReview.status !== "RESOLVED" && i.officerReview.status !== "DISMISSED");
+    // Official inspection queue (all inspection history, excluding dismissed items)
+    const queue = inspections.filter((i) => !i.officerReview || i.officerReview.status !== "DISMISSED");
 
     // Total estimated fines assessed
     const totalFines = inspections

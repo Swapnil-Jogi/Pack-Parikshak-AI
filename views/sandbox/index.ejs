@@ -1,56 +1,186 @@
-<%- include('../partials/header', { title: 'Upload Package for Verification | Pack-Parikshak AI' }) %>
+<%- include('../partials/header', { title: 'Verify Package | ' + t('portalName') }) %>
 <%- include('../partials/navbar') %>
 
-<main class="flex-grow py-10 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
+<!-- Animated OCR Analysis Processing Overlay -->
+<div id="ocrLoadingOverlay" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl p-6 sm:p-8 max-w-md w-full text-center shadow-2xl border border-slate-200 animate-in fade-in zoom-in duration-200">
+    <div class="w-16 h-16 border-4 border-slate-200 border-t-govblue rounded-full animate-spin mx-auto mb-4"></div>
+    <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-50 text-govblue text-[11px] font-bold border border-blue-200 mb-2">
+      <i class="fa-solid fa-microchip"></i> AI Engine Active
+    </div>
+    <h3 class="text-base font-extrabold text-slate-900 tracking-tight" id="ocrLoadingTitle">
+      Analyzing Packaging Declarations...
+    </h3>
+    <p class="text-xs text-slate-500 mt-2 leading-relaxed" id="ocrLoadingSubtitle">
+      Running PaddleOCR neural text detection, extracting statutory declarations, and validating Legal Metrology (Packaged Commodities) Rules, 2011.
+    </p>
+    <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-center gap-2 text-[11px] text-amber-700 font-semibold bg-amber-50/80 py-1.5 px-3 rounded-lg border border-amber-200">
+      <i class="fa-solid fa-circle-notch fa-spin text-amber-500"></i> Please wait 2 to 4 seconds...
+    </div>
+  </div>
+</div>
+
+<main class="flex-grow py-10 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto w-full">
   
   <div class="mb-8 text-center sm:text-left">
     <div class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded bg-blue-50 text-govblue text-xs font-bold border border-blue-200 mb-2">
       <i class="fa-solid fa-camera"></i> AI Packaging Inspection Portal
     </div>
     <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight"><%= t('uploadTitle') %></h1>
-    <p class="text-xs text-slate-600 mt-1">
+    <p class="text-xs text-slate-600 mt-1 max-w-2xl">
       <%= t('uploadSubtitle') %>
     </p>
   </div>
 
   <% if (typeof errorMessage !== 'undefined' && errorMessage) { %>
-    <div class="bg-red-50 border-l-4 border-red-500 p-3 rounded text-xs text-red-700 mb-6">
-      <i class="fa-solid fa-circle-exclamation me-1"></i> <%= errorMessage %>
+    <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-xl text-xs text-red-700 mb-6 shadow-xs flex items-center gap-2.5">
+      <i class="fa-solid fa-circle-exclamation text-base flex-shrink-0 text-red-500"></i>
+      <span class="font-medium"><%= errorMessage %></span>
     </div>
   <% } %>
 
+  <!-- SECTION 1: 1-Click Instant Sample Packaging Demonstrations -->
+  <div class="mb-8">
+    <div class="flex items-center justify-between mb-3">
+      <div>
+        <h2 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+          <i class="fa-solid fa-flask text-amber-500"></i> Instant 1-Click Sample Inspections
+        </h2>
+        <p class="text-[11px] text-slate-500 mt-0.5">Click any pre-packaged commodity sample to run instant neural OCR inspection without uploading files</p>
+      </div>
+      <span class="badge bg-amber-500/20 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded border border-amber-400/40">Demo Packets</span>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      
+      <!-- Sample A: Fully Compliant -->
+      <div class="bg-white rounded-xl border border-emerald-200 shadow-xs hover:shadow-md transition p-4 flex flex-col justify-between hover:border-emerald-400 group">
+        <div>
+          <div class="flex items-start justify-between gap-3 mb-3">
+            <div class="flex items-center gap-3">
+              <img src="/samples/compliant_wheat_flour.png" alt="Wheat Flour" class="w-16 h-16 object-contain rounded-lg border border-slate-200 bg-slate-50 p-1 flex-shrink-0">
+              <div>
+                <span class="badge bg-emerald-100 text-emerald-800 text-[10px] font-bold border border-emerald-300">
+                  <i class="fa-solid fa-circle-check me-1"></i> Scenario A: 100% Compliant
+                </span>
+                <h3 class="text-sm font-bold text-slate-900 mt-1 leading-snug">
+                  <%= t('wheatFlourTitle') %>
+                </h3>
+                <div class="text-[10px] text-slate-500">5 kg Bag • Food & Groceries</div>
+              </div>
+            </div>
+          </div>
+          <p class="text-xs text-slate-600 mb-3 leading-relaxed">
+            Full compliance with standard SI units (kg), mandatory MRP tax declaration clause, complete manufacturer & packer details, and consumer care hotline.
+          </p>
+          <div class="bg-emerald-50/70 p-2.5 rounded-lg border border-emerald-200 text-[11px] text-emerald-900 space-y-1 mb-4 font-medium">
+            <div class="flex items-center gap-1.5"><i class="fa-solid fa-check text-emerald-600 text-xs"></i> <span><strong>Net Quantity:</strong> 5 kg (Standard Rule 13)</span></div>
+            <div class="flex items-center gap-1.5"><i class="fa-solid fa-check text-emerald-600 text-xs"></i> <span><strong>MRP:</strong> Rs. 285 (Incl. of all taxes)</span></div>
+            <div class="flex items-center gap-1.5"><i class="fa-solid fa-check text-emerald-600 text-xs"></i> <span><strong>Origin:</strong> India | Complete Consumer Care</span></div>
+          </div>
+        </div>
+        <form action="/inspections/upload" method="POST" onsubmit="showOcrLoading('Analyzing Compliant Wheat Flour Packaging...')">
+          <input type="hidden" name="sampleType" value="wheat_flour">
+          <button type="submit" class="w-full btn btn-outline-success text-xs font-bold py-2.5 rounded-lg flex items-center justify-center gap-1.5 shadow-xs hover:shadow transition">
+            <i class="fa-solid fa-magnifying-glass"></i> Inspect Scenario A (Compliant Sample) &rarr;
+          </button>
+        </form>
+      </div>
+
+      <!-- Sample B: Non-Compliant / Violating -->
+      <div class="bg-white rounded-xl border border-red-200 shadow-xs hover:shadow-md transition p-4 flex flex-col justify-between hover:border-red-400 group">
+        <div>
+          <div class="flex items-start justify-between gap-3 mb-3">
+            <div class="flex items-center gap-3">
+              <img src="/samples/violating_snack_pack.png" alt="Snack Pack" class="w-16 h-16 object-contain rounded-lg border border-slate-200 bg-slate-50 p-1 flex-shrink-0">
+              <div>
+                <span class="badge bg-red-100 text-red-800 text-[10px] font-bold border border-red-300">
+                  <i class="fa-solid fa-triangle-exclamation me-1"></i> Scenario B: Violations Flagged
+                </span>
+                <h3 class="text-sm font-bold text-slate-900 mt-1 leading-snug">
+                  <%= t('snackPackTitle') %>
+                </h3>
+                <div class="text-[10px] text-slate-500">400 gms Pouch • Snacks</div>
+              </div>
+            </div>
+          </div>
+          <p class="text-xs text-slate-600 mb-3 leading-relaxed">
+            Statutory violations flagged under Legal Metrology Rules: illegal abbreviation 'gms' (Rule 13), omitted 'inclusive of all taxes' (Rule 6(1)(e)), and missing origin.
+          </p>
+          <div class="bg-red-50/70 p-2.5 rounded-lg border border-red-200 text-[11px] text-red-900 space-y-1 mb-4 font-medium">
+            <div class="flex items-center gap-1.5"><i class="fa-solid fa-xmark text-red-600 text-xs"></i> <span><strong>Rule 13:</strong> Illegal unit 'gms' (must be 'g')</span></div>
+            <div class="flex items-center gap-1.5"><i class="fa-solid fa-xmark text-red-600 text-xs"></i> <span><strong>Rule 6(1)(e):</strong> Missing 'Incl. of all taxes' clause</span></div>
+            <div class="flex items-center gap-1.5"><i class="fa-solid fa-xmark text-red-600 text-xs"></i> <span><strong>Section 36 Liability:</strong> Penalty exposure up to ₹25,000</span></div>
+          </div>
+        </div>
+        <form action="/inspections/upload" method="POST" onsubmit="showOcrLoading('Analyzing Violating Snack Packaging for Statutory Penalties...')">
+          <input type="hidden" name="sampleType" value="snack_pack">
+          <button type="submit" class="w-full btn btn-outline-danger text-xs font-bold py-2.5 rounded-lg flex items-center justify-center gap-1.5 shadow-xs hover:shadow transition">
+            <i class="fa-solid fa-shield-halved"></i> Inspect Scenario B (Flagged Infractions) &rarr;
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SECTION 2: Custom Packaging Photo Upload -->
   <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 sm:p-8">
-    <form action="/inspections/upload" method="POST" enctype="multipart/form-data" class="space-y-6">
+    <div class="border-b border-slate-100 pb-4 mb-6">
+      <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+        <i class="fa-solid fa-cloud-arrow-up text-govblue"></i> Upload Custom Packaging Label Image
+      </h2>
+      <p class="text-xs text-slate-500 mt-0.5">Photograph any consumer package label (front/back panel) to verify Legal Metrology compliance</p>
+    </div>
+
+    <form id="uploadForm" action="/inspections/upload" method="POST" enctype="multipart/form-data" class="space-y-6">
       
       <!-- Upload Dropzone -->
       <div>
         <label class="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">
-          <%= t('uploadCardTitle') %>
+          <%= t('uploadCardTitle') %> <span class="text-red-500">*</span>
         </label>
-        <div class="border-2 border-dashed border-slate-300 hover:border-govblue rounded-xl p-8 text-center bg-slate-50/50 hover:bg-slate-50 transition cursor-pointer" onclick="document.getElementById('fileInput').click()">
-          <input type="file" id="fileInput" name="image" accept="image/*" class="hidden" onchange="previewSelectedFile(this)">
-          <div class="w-12 h-12 bg-blue-100 text-govblue rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
-            <i class="fa-solid fa-cloud-arrow-up"></i>
+        
+        <div id="dropzoneContainer" class="border-2 border-dashed border-slate-300 hover:border-govblue rounded-xl p-8 text-center bg-slate-50/50 hover:bg-slate-50 transition cursor-pointer" onclick="document.getElementById('fileInput').click()">
+          <input type="file" id="fileInput" name="image" accept="image/png,image/jpeg,image/webp,image/jpg" class="hidden" onchange="previewSelectedFile(this)">
+          
+          <div id="dropzonePrompt">
+            <div class="w-14 h-14 bg-blue-100 text-govblue rounded-2xl flex items-center justify-center mx-auto mb-3 text-2xl shadow-xs">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+            </div>
+            <p class="text-xs font-bold text-slate-800" id="filePromptText">
+              <%= t('uploadDragDrop') %>
+            </p>
+            <p class="text-[11px] text-slate-500 mt-1"><%= t('uploadFormats') %> (Max 15MB)</p>
           </div>
-          <p class="text-xs font-bold text-slate-800" id="filePromptText">
-            <%= t('uploadDragDrop') %>
-          </p>
-          <p class="text-[11px] text-slate-500 mt-1"><%= t('uploadFormats') %></p>
+
+          <!-- Selected File Preview -->
           <div id="imagePreviewContainer" class="mt-4 hidden">
-            <img id="imagePreview" src="#" alt="Preview" class="max-h-48 mx-auto rounded border border-slate-300 shadow-sm">
+            <img id="imagePreview" src="#" alt="Preview" class="max-h-56 mx-auto rounded-lg border border-slate-300 shadow-md object-contain bg-white p-1">
+            <div class="mt-3 flex items-center justify-center gap-2">
+              <span id="previewFileName" class="text-xs font-bold text-slate-800 bg-white px-2.5 py-1 rounded border border-slate-200 shadow-xs"></span>
+              <button type="button" onclick="clearSelectedFile(event)" class="btn btn-xs btn-outline-danger text-[10px] py-1 px-2 rounded">
+                <i class="fa-solid fa-trash me-1"></i> Change File
+              </button>
+            </div>
           </div>
+
+        </div>
+
+        <div id="fileValidationNotice" class="hidden mt-2 text-xs text-red-600 font-semibold flex items-center gap-1.5">
+          <i class="fa-solid fa-circle-exclamation"></i> Please select a packaging image file to inspect.
         </div>
       </div>
 
-      <!-- Optional Metadata -->
+      <!-- Optional Packaging Metadata -->
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
         <div>
           <label class="block text-xs font-semibold text-slate-700 mb-1"><%= t('fieldCommodity') %></label>
-          <input type="text" name="productName" placeholder="e.g. Basmati Rice 5kg" class="form-control text-xs py-2 rounded-lg">
+          <input type="text" name="productName" placeholder="e.g. Basmati Rice 5kg" class="form-control text-xs py-2 rounded-lg border-slate-300">
         </div>
         <div>
           <label class="block text-xs font-semibold text-slate-700 mb-1">Product Category</label>
-          <select name="category" class="form-select text-xs py-2 rounded-lg">
+          <select name="category" class="form-select text-xs py-2 rounded-lg border-slate-300">
             <option value="Food & Groceries">Food & Groceries</option>
             <option value="Beverages">Beverages</option>
             <option value="Cosmetics & Personal Care">Cosmetics & Personal Care</option>
@@ -61,7 +191,7 @@
         </div>
         <div>
           <label class="block text-xs font-semibold text-slate-700 mb-1"><%= t('jurisdictionLabel') %></label>
-          <select name="state" class="form-select text-xs py-2 rounded-lg">
+          <select name="state" class="form-select text-xs py-2 rounded-lg border-slate-300">
             <option value="Delhi">Delhi</option>
             <option value="Maharashtra">Maharashtra</option>
             <option value="Karnataka">Karnataka</option>
@@ -70,29 +200,16 @@
             <option value="Uttar Pradesh">Uttar Pradesh</option>
             <option value="West Bengal">West Bengal</option>
             <option value="Punjab">Punjab</option>
+            <option value="Haryana">Haryana</option>
           </select>
         </div>
       </div>
 
-      <!-- Instant Sample Buttons alternative -->
-      <div class="pt-4 border-t border-slate-200">
-        <label class="block text-xs font-bold text-slate-800 mb-2"><%= t('orTrySamples') %></label>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <button type="submit" name="sampleType" value="wheat_flour" class="btn btn-outline-success text-xs font-semibold py-2.5 text-start flex items-center justify-between">
-            <span><i class="fa-solid fa-check-circle me-1.5"></i> Scenario A: <%= t('wheatFlourTitle') %></span>
-            <span class="badge bg-emerald-600"><%= t('statusCompliant') %></span>
-          </button>
-          <button type="submit" name="sampleType" value="snack_pack" class="btn btn-outline-danger text-xs font-semibold py-2.5 text-start flex items-center justify-between">
-            <span><i class="fa-solid fa-triangle-exclamation me-1.5"></i> Scenario B: <%= t('snackPackTitle') %></span>
-            <span class="badge bg-red-600"><%= t('statusNonCompliant') %></span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Submit Button -->
-      <div class="pt-4">
-        <button type="submit" id="submitBtn" class="w-full btn bg-govblue hover:bg-govblue-dark text-white font-bold text-xs py-3 rounded-lg shadow-md transition flex items-center justify-center gap-2">
-          <i class="fa-solid fa-magnifying-glass"></i> <%= t('uploadBtn') %>
+      <!-- Submit Upload Button -->
+      <div class="pt-4 border-t border-slate-100">
+        <button type="submit" id="submitBtn" class="w-full btn bg-govblue hover:bg-govblue-dark text-white font-bold text-xs py-3 rounded-lg shadow-md hover:shadow-lg transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-magnifying-glass text-amber-400"></i>
+          <span><%= t('uploadBtn') %></span>
         </button>
       </div>
 
@@ -101,18 +218,95 @@
 </main>
 
 <script>
+  function showOcrLoading(subtitle) {
+    const overlay = document.getElementById("ocrLoadingOverlay");
+    const subText = document.getElementById("ocrLoadingSubtitle");
+    if (subText && subtitle) {
+      subText.innerText = subtitle;
+    }
+    if (overlay) {
+      overlay.classList.remove("hidden");
+    }
+  }
+
   function previewSelectedFile(input) {
+    const notice = document.getElementById("fileValidationNotice");
+    if (notice) notice.classList.add("hidden");
+
     if (input.files && input.files[0]) {
+      const file = input.files[0];
       const reader = new FileReader();
       reader.onload = function(e) {
         document.getElementById('imagePreview').src = e.target.result;
         document.getElementById('imagePreviewContainer').classList.remove('hidden');
-        document.getElementById('filePromptText').innerText = input.files[0].name;
-      }
-      reader.readAsDataURL(input.files[0]);
+        document.getElementById('dropzonePrompt').classList.add('hidden');
+        document.getElementById('previewFileName').innerText = file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
+      };
+      reader.readAsDataURL(file);
     }
   }
+
+  function clearSelectedFile(e) {
+    if (e) e.stopPropagation();
+    const fileInput = document.getElementById('fileInput');
+    if (fileInput) fileInput.value = '';
+    document.getElementById('imagePreviewContainer').classList.add('hidden');
+    document.getElementById('dropzonePrompt').classList.remove('hidden');
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const uploadForm = document.getElementById("uploadForm");
+    const fileInput = document.getElementById("fileInput");
+    const submitBtn = document.getElementById("submitBtn");
+    const validationNotice = document.getElementById("fileValidationNotice");
+    const dropzone = document.getElementById("dropzoneContainer");
+
+    if (uploadForm) {
+      uploadForm.addEventListener("submit", function (e) {
+        if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+          e.preventDefault();
+          if (validationNotice) validationNotice.classList.remove("hidden");
+          if (dropzone) {
+            dropzone.classList.add("border-red-400", "bg-red-50/30");
+            setTimeout(() => dropzone.classList.remove("border-red-400", "bg-red-50/30"), 2500);
+          }
+          return;
+        }
+
+        // Show animated OCR processing overlay
+        showOcrLoading("Uploading package image & running PaddleOCR text recognition...");
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin text-amber-400"></i> Processing Packaging OCR...';
+        }
+      });
+    }
+
+    // Drag and drop visual state handlers
+    if (dropzone) {
+      ['dragenter', 'dragover'].forEach(eventName => {
+        dropzone.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          dropzone.classList.add('border-govblue', 'bg-blue-50/40');
+        }, false);
+      });
+
+      ['dragleave', 'drop'].forEach(eventName => {
+        dropzone.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          dropzone.classList.remove('border-govblue', 'bg-blue-50/40');
+        }, false);
+      });
+
+      dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          fileInput.files = e.dataTransfer.files;
+          previewSelectedFile(fileInput);
+        }
+      });
+    }
+  });
 </script>
 
 <%- include('../partials/footer') %>
-

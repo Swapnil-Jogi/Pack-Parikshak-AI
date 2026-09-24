@@ -59,11 +59,16 @@ exports.postLogin = (req, res, next) => {
           ? req.session.returnTo
           : "/officer/dashboard";
       } else {
-        destination = req.body.returnTo || req.session.returnTo || "/inspections/new";
+        // Consumer: strictly send to consumer dashboard or clean returnTo (NEVER officer routes)
+        destination = (req.body.returnTo && !req.body.returnTo.startsWith("/officer"))
+          ? req.body.returnTo
+          : (req.session.returnTo && !req.session.returnTo.startsWith("/officer"))
+          ? req.session.returnTo
+          : "/dashboard";
       }
 
       if (typeof destination !== "string" || !destination.startsWith("/") || destination.startsWith("//")) {
-        destination = user.role === "officer" ? "/officer/dashboard" : "/inspections/new";
+        destination = user.role === "officer" ? "/officer/dashboard" : "/dashboard";
       }
       delete req.session.returnTo;
       req.session.save(() => {
@@ -125,23 +130,34 @@ exports.postRegister = async (req, res) => {
 
     const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
     if (existingUser) {
-      req.flash("error", "An account with this email address already exists.");
+      req.session.errorMessage = "An account with this email address already exists.";
       return res.redirect("/auth/register" + (role ? `?role=${encodeURIComponent(role)}` : ""));
     }
 
-    // Reliable officer detection: selected role is officer, badge ID provided, or official government email
-    const isOfficer = role === "officer" || Boolean(badgeId && badgeId.trim().length > 0) || Boolean(email && /@(.*\.)?(gov\.in|nic\.in|lm\.gov\.in)$/i.test(email.trim()));
-    const userRole = isOfficer ? "officer" : "user";
+    // STRICT ROLE ENFORCEMENT:
+    // Only assign 'officer' if the role submitted is explicitly 'officer'.
+    // Consumers selecting 'user' are strictly assigned 'user' with NO officer permissions.
+    let userRole = "user";
+    let assignedBadgeId = null;
+    let assignedDept = (department && department.trim()) ? department.trim() : "Consumer / Business Packer";
+    let assignedOrg = organization || "General Consumer / Business";
+
+    if (role === "officer") {
+      userRole = "officer";
+      assignedBadgeId = (badgeId && badgeId.trim()) ? badgeId.trim() : `DL-LM-${Math.floor(1000 + Math.random() * 9000)}`;
+      assignedDept = (department && department.trim()) ? department.trim() : "Legal Metrology Enforcement Wing, Directorate of Legal Metrology";
+      assignedOrg = organization || "Directorate of Legal Metrology";
+    }
 
     const user = new User({
       name: name.trim(),
       email: email.toLowerCase().trim(),
       password,
       role: userRole,
-      badgeId: userRole === "officer" ? (badgeId && badgeId.trim() ? badgeId.trim() : `DL-LM-${Math.floor(1000 + Math.random() * 9000)}`) : null,
-      department: department && department.trim() ? department.trim() : (userRole === "officer" ? "Legal Metrology Enforcement Wing, Directorate of Legal Metrology" : "Consumer / Packer"),
+      badgeId: assignedBadgeId,
+      department: assignedDept,
       state: state || "Delhi",
-      organization: organization || (userRole === "officer" ? "Directorate of Legal Metrology" : "General Consumer / Business"),
+      organization: assignedOrg,
       phone: phone || ""
     });
 
@@ -154,18 +170,25 @@ exports.postRegister = async (req, res) => {
         return res.redirect("/auth/login");
       }
 
-      req.flash("success", `Welcome to Pack-Parikshak AI, ${user.name}! Your account has been registered successfully.`);
+      req.flash("success", user.role === "officer"
+        ? `Official Enforcement Officer account created! Welcome Inspector ${user.name}.`
+        : `Account created successfully! Welcome ${user.name}.`);
 
-      // If registered as an officer, send directly to Officer Command Hub unless specifically heading to another officer route
+      // If registered as an officer, send directly to Officer Command Hub.
+      // If consumer, strictly send to Consumer Dashboard or inspections upload, NEVER officer portal!
       let destination;
       if (user.role === "officer") {
         destination = (formReturnTo && formReturnTo.startsWith("/officer")) ? formReturnTo : "/officer/dashboard";
       } else {
-        destination = formReturnTo || (req.session && req.session.returnTo) || "/inspections/new";
+        destination = (formReturnTo && !formReturnTo.startsWith("/officer"))
+          ? formReturnTo
+          : ((req.session && req.session.returnTo && !req.session.returnTo.startsWith("/officer"))
+            ? req.session.returnTo
+            : "/dashboard");
       }
 
       if (typeof destination !== "string" || !destination.startsWith("/") || destination.startsWith("//")) {
-        destination = user.role === "officer" ? "/officer/dashboard" : "/inspections/new";
+        destination = user.role === "officer" ? "/officer/dashboard" : "/dashboard";
       }
 
       delete req.session.returnTo;
@@ -179,7 +202,7 @@ exports.postRegister = async (req, res) => {
     });
   } catch (error) {
     console.error("[Auth] Registration error:", error);
-    req.flash("error", error.message || "Registration failed");
+    req.session.errorMessage = error.message || "Registration failed";
     res.redirect("/auth/register");
   }
 };
@@ -207,7 +230,6 @@ exports.demoLogin = async (req, res, next) => {
 
     req.logIn(user, (err) => {
       if (err) return next(err);
-      req.flash("success", `Signed in as Demo ${user.role === "officer" ? "Officer" : "Consumer"}: ${user.name}`);
       const returnTo = req.session.returnTo || (user.role === "officer" ? "/officer/dashboard" : "/dashboard");
       delete req.session.returnTo;
       req.session.save(() => {
@@ -224,8 +246,7 @@ exports.demoLogin = async (req, res, next) => {
 exports.logout = (req, res, next) => {
   req.logout((err) => {
     if (err) return next(err);
-    req.flash("info", "You have been logged out successfully.");
-    res.redirect("/auth/login");
+    res.redirect("/auth/login?alert=logged_out");
   });
 };
 

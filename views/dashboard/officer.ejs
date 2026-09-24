@@ -249,6 +249,18 @@
               </td>
             </tr>
           <% }) %>
+          <% if (queue.length === 0) { %>
+            <tr>
+              <td colspan="7" class="py-10 text-center text-slate-500">
+                <i class="fa-solid fa-clipboard-check text-4xl text-emerald-500 mb-2 block"></i>
+                <div class="font-bold text-slate-800 text-sm">No Pending Inspections</div>
+                <p class="text-xs text-slate-500 mt-1">All packaged commodities in your jurisdiction are compliant or resolved.</p>
+                <a href="/inspections/new" class="btn btn-warning btn-sm text-xs font-bold py-1.5 px-3 mt-3 inline-flex items-center gap-1.5 shadow-sm">
+                  <i class="fa-solid fa-camera"></i> Inspect New Package
+                </a>
+              </td>
+            </tr>
+          <% } %>
         </tbody>
       </table>
     </div>

@@ -5,44 +5,67 @@ const Inspection = require("./models/Inspection");
 const Notice = require("./models/Notice");
 const RuleEngine = require("./services/ruleEngine");
 
-const seedData = async () => {
+const seedData = async (clean = false) => {
   try {
-    const connUri = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/pack_parikshak";
-    await mongoose.connect(connUri);
-    console.log("[Seed] Connected to MongoDB.");
+    if (mongoose.connection.readyState !== 1) {
+      const connUri = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/pack_parikshak";
+      await mongoose.connect(connUri);
+      console.log("[Seed] Connected to MongoDB.");
+    }
 
-    // Clean existing records
-    await User.deleteMany({});
-    await Inspection.deleteMany({});
-    await Notice.deleteMany({});
-    console.log("[Seed] Cleared existing data.");
+    if (clean) {
+      // Clean existing records if explicitly commanded
+      await User.deleteMany({});
+      await Inspection.deleteMany({});
+      await Notice.deleteMany({});
+      console.log("[Seed] Cleared existing data.");
+    }
 
-    // 1. Create Default Users
-    const officer = new User({
-      name: "Inspector Ramesh Sharma",
-      email: "officer@delhi.lm.gov.in",
-      password: "Password123!",
-      role: "officer",
-      badgeId: "DL-LM-0842",
-      department: "Legal Metrology Enforcement Wing, Government of NCT of Delhi",
-      state: "Delhi",
-      organization: "Directorate of Legal Metrology",
-      phone: "+91 98112 34567"
-    });
-    await officer.save();
+    // 1. Create or ensure Default Users
+    let officer = await User.findOne({ email: "officer@delhi.lm.gov.in" });
+    if (!officer) {
+      officer = new User({
+        name: "Inspector Ramesh Sharma",
+        email: "officer@delhi.lm.gov.in",
+        password: "Password123!",
+        role: "officer",
+        badgeId: "DL-LM-0842",
+        department: "Legal Metrology Enforcement Wing, Government of NCT of Delhi",
+        state: "Delhi",
+        organization: "Directorate of Legal Metrology",
+        phone: "+91 98112 34567"
+      });
+      await officer.save();
+    }
 
-    const consumer = new User({
-      name: "Aakash Verma",
-      email: "consumer@example.com",
-      password: "Password123!",
-      role: "user",
-      department: "Consumer / Packer",
-      state: "Delhi",
-      organization: "Verma Retail Foods Pvt Ltd",
-      phone: "+91 98765 43210"
-    });
-    await consumer.save();
-    console.log("[Seed] Created Officer & Consumer demo accounts.");
+    let consumer = await User.findOne({ email: "consumer@example.com" });
+    if (!consumer) {
+      consumer = new User({
+        name: "Aakash Verma",
+        email: "consumer@example.com",
+        password: "Password123!",
+        role: "user",
+        department: "Consumer / Packer",
+        state: "Delhi",
+        organization: "Verma Retail Foods Pvt Ltd",
+        phone: "+91 98765 43210"
+      });
+      await consumer.save();
+    }
+    console.log("[Seed] Ensured Officer & Consumer demo accounts exist.");
+
+    // Fix any previous accidental role assignments:
+    // Any account whose email doesn't end in official gov domain and isn't the demo officer should be 'user'
+    await User.updateMany(
+      {
+        email: { $nin: ["officer@delhi.lm.gov.in"], $not: /@(.*\.)?(gov\.in|nic\.in|lm\.gov\.in)$/i },
+        role: "officer",
+        badgeId: { $in: [null, "", /^DL-LM-\d+$/] }
+      },
+      {
+        $set: { role: "user", badgeId: null, department: "Consumer / Packer" }
+      }
+    );
 
     // 2. Realistic Packaging Inspection Data Across States
     const sampleInspections = [
@@ -398,12 +421,46 @@ const seedData = async () => {
     console.log("Consumer Login:  consumer@example.com     |  Password123!");
     console.log("==================================================================");
 
-    process.exit(0);
+    return { success: true };
   } catch (err) {
     console.error("[Seed] Error seeding data:", err);
-    process.exit(1);
+    throw err;
   }
 };
 
-seedData();
+const autoSeedIfEmpty = async () => {
+  try {
+    if (mongoose.connection.readyState !== 1) {
+      return;
+    }
+    const count = await Inspection.countDocuments();
+    if (count === 0) {
+      console.log("[Auto-Seed] Database has 0 inspections. Auto-seeding demonstration packaging inspections and demo accounts...");
+      await seedData(false);
+    } else {
+      // Ensure the two essential sample products always exist in the database
+      const hasWheatFlour = await Inspection.findOne({ imageUrl: "/samples/compliant_wheat_flour.png" });
+      const hasSnackPack = await Inspection.findOne({ imageUrl: "/samples/violating_snack_pack.png" });
+      if (!hasWheatFlour || !hasSnackPack) {
+        console.log("[Auto-Seed] Essential sample packaging products missing from database. Seeding demo records...");
+        await seedData(false);
+      }
+    }
+  } catch (err) {
+    console.warn("[Auto-Seed] Non-critical check notice:", err.message);
+  }
+};
+
+if (require.main === module) {
+  const connUri = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/pack_parikshak";
+  mongoose.connect(connUri).then(async () => {
+    await seedData(true);
+    process.exit(0);
+  }).catch((err) => {
+    console.error("[Seed] CLI execution failed:", err);
+    process.exit(1);
+  });
+}
+
+module.exports = { seedData, autoSeedIfEmpty };
 

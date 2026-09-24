@@ -64,7 +64,7 @@
           </div>
           <div>
             <label class="block text-xs font-semibold text-amber-900 mb-1"><%= t('deptLabel') %></label>
-            <input type="text" name="department" id="inputDepartment" maxlength="200" value="Legal Metrology Enforcement Wing, Directorate of Legal Metrology"
+            <input type="text" name="department" id="inputDepartment" maxlength="200" value="<%= typeof activeRole !== 'undefined' && activeRole === 'officer' ? 'Legal Metrology Enforcement Wing, Directorate of Legal Metrology' : '' %>"
               class="form-control text-xs py-2 border-amber-300 rounded-lg">
           </div>
         </div>
@@ -157,6 +157,9 @@
       } catch (e) {}
     } else {
       if (officerFields) officerFields.classList.add("hidden");
+      if (badgeInput) badgeInput.value = "";
+      const deptInput = document.getElementById("inputDepartment");
+      if (deptInput) deptInput.value = "";
       if (tabOfficer) {
         tabOfficer.classList.remove("bg-govblue", "text-white", "shadow-sm");
         tabOfficer.classList.add("text-slate-600", "hover:text-slate-900");

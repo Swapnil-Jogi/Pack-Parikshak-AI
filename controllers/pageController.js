@@ -4,34 +4,43 @@ const Inspection = require("../models/Inspection");
 // Home Landing Page
 exports.getHome = async (req, res) => {
   try {
-    let totalCount = 1420;
-    let compliantCount = 1080;
-    let violationCount = 340;
+    let totalCount = 0;
+    let compliantCount = 0;
+    let violationCount = 0;
+    let hasDb = false;
 
     // Only query database when MongoDB is actively connected; avoids 10s Mongoose buffering timeout
     if (mongoose.connection.readyState === 1) {
       try {
         const [tot, comp, viol] = await Promise.all([
-          Inspection.countDocuments().maxTimeMS(2000),
-          Inspection.countDocuments({ complianceStatus: "COMPLIANT" }).maxTimeMS(2000),
-          Inspection.countDocuments({ complianceStatus: "NON_COMPLIANT" }).maxTimeMS(2000)
+          Inspection.countDocuments().maxTimeMS(2500),
+          Inspection.countDocuments({ complianceStatus: "COMPLIANT" }).maxTimeMS(2500),
+          Inspection.countDocuments({ complianceStatus: "NON_COMPLIANT" }).maxTimeMS(2500)
         ]);
         totalCount = tot;
         compliantCount = comp;
         violationCount = viol;
+        hasDb = true;
       } catch (dbErr) {
         console.warn("[Page] DB query skipped/timed out, using baseline stats:", dbErr.message);
       }
     }
 
+    // Dynamic stats: if database has records, use actual real-time database numbers!
+    // If completely offline or 0 records, fallback to realistic default numbers
+    const statsTotal = (hasDb && totalCount > 0) ? totalCount : 14;
+    const statsCompliant = (hasDb && totalCount > 0) ? compliantCount : 8;
+    const statsViolations = (hasDb && totalCount > 0) ? violationCount : 6;
+    const statsRate = statsTotal > 0 ? Math.round((statsCompliant / statsTotal) * 100) : 57;
+
     res.render("index.ejs", {
       title: "Pack-Parikshak AI | Legal Metrology Packaged Commodities Portal",
       user: req.user,
       stats: {
-        total: totalCount || 1420,
-        compliant: compliantCount || 1080,
-        violations: violationCount || 340,
-        rate: totalCount > 0 ? Math.round((compliantCount / totalCount) * 100) : 76
+        total: statsTotal,
+        compliant: statsCompliant,
+        violations: statsViolations,
+        rate: statsRate
       }
     });
   } catch (err) {
@@ -40,7 +49,7 @@ exports.getHome = async (req, res) => {
       res.render("index.ejs", {
         title: "Pack-Parikshak AI",
         user: req.user,
-        stats: { total: 1420, compliant: 1080, violations: 340, rate: 76 }
+        stats: { total: 14, compliant: 8, violations: 6, rate: 57 }
       });
     }
   }

@@ -1,56 +1,104 @@
-<% if (typeof success_msg !== 'undefined' && success_msg && success_msg.length > 0) { %>
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-3">
+<!-- Modern Government-Grade Flash Toast Notifications -->
+<div id="flashToastContainer" class="fixed top-20 right-4 sm:right-6 z-50 flex flex-col gap-2.5 max-w-md w-[calc(100%-2rem)] sm:w-96 pointer-events-none transition-all">
+
+  <% if (typeof success_msg !== 'undefined' && success_msg && success_msg.length > 0) { %>
     <% (Array.isArray(success_msg) ? success_msg : [success_msg]).forEach(function(msg) { %>
-      <div class="alert alert-success alert-dismissible fade show flex items-center justify-between p-3.5 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-900 shadow-sm text-xs mb-2" role="alert">
-        <div class="flex items-center gap-2.5">
-          <i class="fa-solid fa-circle-check text-emerald-600 text-sm flex-shrink-0"></i>
-          <span class="font-medium"><%= msg %></span>
+      <% if (msg) { %>
+        <div class="flash-toast pointer-events-auto bg-slate-900/95 backdrop-blur-md border border-emerald-500/40 rounded-xl p-4 text-white shadow-2xl transition-all duration-300 transform translate-y-0 opacity-100 flex items-start gap-3">
+          <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center flex-shrink-0 text-sm mt-0.5">
+            <i class="fa-solid fa-circle-check"></i>
+          </div>
+          <div class="flex-grow min-w-0 pr-1">
+            <div class="text-[11px] font-bold text-emerald-400 uppercase tracking-wider mb-0.5">Operation Successful</div>
+            <div class="text-xs text-slate-200 leading-snug"><%= msg %></div>
+          </div>
+          <button type="button" onclick="closeToast(this)" class="text-slate-400 hover:text-white transition flex-shrink-0 p-1 text-sm focus:outline-none" aria-label="Close notification">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
         </div>
-        <button type="button" class="btn-close text-xs p-2 text-emerald-700 hover:text-emerald-900" data-bs-dismiss="alert" aria-label="Close"></button>
-      </div>
+      <% } %>
     <% }); %>
-  </div>
-<% } %>
+  <% } %>
 
-<% if (typeof error_msg !== 'undefined' && error_msg && error_msg.length > 0) { %>
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-3">
+  <% if (typeof error_msg !== 'undefined' && error_msg && error_msg.length > 0) { %>
     <% (Array.isArray(error_msg) ? error_msg : [error_msg]).forEach(function(msg) { %>
-      <div class="alert alert-danger alert-dismissible fade show flex items-center justify-between p-3.5 rounded-xl border border-red-300 bg-red-50 text-red-900 shadow-sm text-xs mb-2" role="alert">
-        <div class="flex items-center gap-2.5">
-          <i class="fa-solid fa-circle-exclamation text-red-600 text-sm flex-shrink-0"></i>
-          <span class="font-medium"><%= msg %></span>
+      <% if (msg) { %>
+        <div class="flash-toast pointer-events-auto bg-slate-900/95 backdrop-blur-md border border-red-500/40 rounded-xl p-4 text-white shadow-2xl transition-all duration-300 transform translate-y-0 opacity-100 flex items-start gap-3">
+          <div class="w-8 h-8 rounded-lg bg-red-500/20 text-red-400 border border-red-500/30 flex items-center justify-center flex-shrink-0 text-sm mt-0.5">
+            <i class="fa-solid fa-circle-exclamation"></i>
+          </div>
+          <div class="flex-grow min-w-0 pr-1">
+            <div class="text-[11px] font-bold text-red-400 uppercase tracking-wider mb-0.5">Regulatory Alert</div>
+            <div class="text-xs text-slate-200 leading-snug"><%= msg %></div>
+          </div>
+          <button type="button" onclick="closeToast(this)" class="text-slate-400 hover:text-white transition flex-shrink-0 p-1 text-sm focus:outline-none" aria-label="Close notification">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
         </div>
-        <button type="button" class="btn-close text-xs p-2 text-red-700 hover:text-red-900" data-bs-dismiss="alert" aria-label="Close"></button>
-      </div>
+      <% } %>
     <% }); %>
-  </div>
-<% } %>
+  <% } %>
 
-<% if (typeof warning_msg !== 'undefined' && warning_msg && warning_msg.length > 0) { %>
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-3">
+  <% if (typeof warning_msg !== 'undefined' && warning_msg && warning_msg.length > 0) { %>
     <% (Array.isArray(warning_msg) ? warning_msg : [warning_msg]).forEach(function(msg) { %>
-      <div class="alert alert-warning alert-dismissible fade show flex items-center justify-between p-3.5 rounded-xl border border-amber-300 bg-amber-50 text-amber-900 shadow-sm text-xs mb-2" role="alert">
-        <div class="flex items-center gap-2.5">
-          <i class="fa-solid fa-triangle-exclamation text-amber-600 text-sm flex-shrink-0"></i>
-          <span class="font-medium"><%= msg %></span>
+      <% if (msg) { %>
+        <div class="flash-toast pointer-events-auto bg-slate-900/95 backdrop-blur-md border border-amber-500/40 rounded-xl p-4 text-white shadow-2xl transition-all duration-300 transform translate-y-0 opacity-100 flex items-start gap-3">
+          <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center flex-shrink-0 text-sm mt-0.5">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+          </div>
+          <div class="flex-grow min-w-0 pr-1">
+            <div class="text-[11px] font-bold text-amber-400 uppercase tracking-wider mb-0.5">Statutory Warning</div>
+            <div class="text-xs text-slate-200 leading-snug"><%= msg %></div>
+          </div>
+          <button type="button" onclick="closeToast(this)" class="text-slate-400 hover:text-white transition flex-shrink-0 p-1 text-sm focus:outline-none" aria-label="Close notification">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
         </div>
-        <button type="button" class="btn-close text-xs p-2 text-amber-700 hover:text-amber-900" data-bs-dismiss="alert" aria-label="Close"></button>
-      </div>
+      <% } %>
     <% }); %>
-  </div>
-<% } %>
+  <% } %>
 
-<% if (typeof info_msg !== 'undefined' && info_msg && info_msg.length > 0) { %>
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-3">
+  <% if (typeof info_msg !== 'undefined' && info_msg && info_msg.length > 0) { %>
     <% (Array.isArray(info_msg) ? info_msg : [info_msg]).forEach(function(msg) { %>
-      <div class="alert alert-info alert-dismissible fade show flex items-center justify-between p-3.5 rounded-xl border border-blue-300 bg-blue-50 text-blue-900 shadow-sm text-xs mb-2" role="alert">
-        <div class="flex items-center gap-2.5">
-          <i class="fa-solid fa-circle-info text-blue-600 text-sm flex-shrink-0"></i>
-          <span class="font-medium"><%= msg %></span>
+      <% if (msg) { %>
+        <div class="flash-toast pointer-events-auto bg-slate-900/95 backdrop-blur-md border border-blue-500/40 rounded-xl p-4 text-white shadow-2xl transition-all duration-300 transform translate-y-0 opacity-100 flex items-start gap-3">
+          <div class="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 border border-blue-500/30 flex items-center justify-center flex-shrink-0 text-sm mt-0.5">
+            <i class="fa-solid fa-circle-info"></i>
+          </div>
+          <div class="flex-grow min-w-0 pr-1">
+            <div class="text-[11px] font-bold text-blue-400 uppercase tracking-wider mb-0.5">System Notice</div>
+            <div class="text-xs text-slate-200 leading-snug"><%= msg %></div>
+          </div>
+          <button type="button" onclick="closeToast(this)" class="text-slate-400 hover:text-white transition flex-shrink-0 p-1 text-sm focus:outline-none" aria-label="Close notification">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
         </div>
-        <button type="button" class="btn-close text-xs p-2 text-blue-700 hover:text-blue-900" data-bs-dismiss="alert" aria-label="Close"></button>
-      </div>
+      <% } %>
     <% }); %>
-  </div>
-<% } %>
+  <% } %>
 
+</div>
+
+<script>
+  function closeToast(btn) {
+    const toast = btn.closest('.flash-toast');
+    if (!toast) return;
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(100%)';
+    setTimeout(() => toast.remove(), 300);
+  }
+
+  // Automatically dismiss toasts smoothly after 5.5 seconds
+  document.addEventListener("DOMContentLoaded", function () {
+    const toasts = document.querySelectorAll('.flash-toast');
+    toasts.forEach((toast) => {
+      setTimeout(() => {
+        if (toast && toast.parentElement) {
+          toast.style.opacity = '0';
+          toast.style.transform = 'translateX(100%)';
+          setTimeout(() => toast.remove(), 300);
+        }
+      }, 5500);
+    });
+  });
+</script>

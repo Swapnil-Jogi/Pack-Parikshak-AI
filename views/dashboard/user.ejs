@@ -106,10 +106,17 @@
         <tbody class="divide-y divide-slate-100">
           <% if (inspections.length === 0) { %>
             <tr>
-              <td colspan="8" class="text-center py-8 text-slate-500">
-                <i class="fa-solid fa-box-open text-2xl text-slate-400 mb-2"></i>
-                <p><%= t('noInspectionsYet') %></p>
-                <a href="/inspections/new" class="btn btn-primary btn-sm text-xs mt-2"><%= t('startFirstInspectionBtn') %></a>
+              <td colspan="8" class="text-center py-12 text-slate-500">
+                <div class="w-14 h-14 rounded-2xl bg-blue-50 text-govblue border border-blue-200 flex items-center justify-center mx-auto mb-3 text-2xl">
+                  <i class="fa-solid fa-box-open"></i>
+                </div>
+                <div class="font-bold text-slate-800 text-sm"><%= t('noInspectionsYet') %></div>
+                <p class="text-xs text-slate-500 mt-1 max-w-md mx-auto">Upload any packaged product image or test our 1-click sample commodities to verify Legal Metrology Rules (2011) compliance.</p>
+                <div class="mt-4 flex items-center justify-center gap-2">
+                  <a href="/inspections/new" class="btn bg-govblue hover:bg-govblue-dark text-white btn-sm text-xs font-bold py-2 px-4 shadow-sm inline-flex items-center gap-1.5">
+                    <i class="fa-solid fa-camera"></i> <%= t('startFirstInspectionBtn') %> &rarr;
+                  </a>
+                </div>
               </td>
             </tr>
           <% } else { %>

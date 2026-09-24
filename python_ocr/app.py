@@ -70,7 +70,7 @@ try:
         gc.collect()
         print("[Python-OCR] ONNX runtime execution graphs warmed up and ready for instant inference.", flush=True)
     except Exception as warm_err:
-        pass
+        print(f"[Python-OCR] Warmup notice: {warm_err}", file=sys.stderr, flush=True)
 except Exception as e:
     print(f"[Python-OCR] Error initializing OCR engine: {e}", file=sys.stderr, flush=True)
     ocr_engine = None

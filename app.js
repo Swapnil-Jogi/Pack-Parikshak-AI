@@ -325,6 +325,27 @@ app.get("/api/health", async (req, res) => {
   }
 });
 
+app.get("/api/debug/logs", (req, res) => {
+  res.json({
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
+    logs: recentLogs
+  });
+});
+
+app.get("/api/debug/test-ocr", async (req, res) => {
+  try {
+    const ocrService = require("./services/ocrService");
+    const samplePath = path.join(__dirname, "public", "samples", "compliant_wheat_flour.png");
+    console.log("[Debug-Test] Invoking Python microservice directly on sample image...");
+    const result = await ocrService.processImage(samplePath, "diagnostics_force_python");
+    res.json({ success: true, result });
+  } catch (err) {
+    console.error("[Debug-Test] Direct Python OCR failed:", err);
+    res.status(500).json({ success: false, error: err.message, stack: err.stack });
+  }
+});
+
 // Routes
 const indexRoutes = require("./routes/indexRoutes");
 const authRoutes = require("./routes/authRoutes");
@@ -365,6 +386,11 @@ app.use((err, req, res, next) => {
 // Unified Terminal Management: Auto-spawn Python PaddleOCR microservice
 // -------------------------------------------------------------
 let pythonProcess = null;
+const recentLogs = [];
+function addLog(source, msg) {
+  recentLogs.push({ time: new Date().toISOString(), source, msg: String(msg).slice(0, 500) });
+  if (recentLogs.length > 100) recentLogs.shift();
+}
 
 async function checkOcrServiceHealth() {
   try {
@@ -379,10 +405,12 @@ async function startPythonOcrService() {
   const isRunning = await checkOcrServiceHealth();
   if (isRunning) {
     console.log(`[Python-OCR] Detected existing microservice active on port ${pythonOcrPort}.`);
+    addLog("python_init", "Detected existing microservice active on port " + pythonOcrPort);
     return;
   }
 
   console.log(`[Python-OCR] Spawning Python PaddleOCR microservice on port ${pythonOcrPort}...`);
+  addLog("python_init", "Spawning Python microservice on port " + pythonOcrPort);
   const pythonCmd = process.platform === "win32" ? "python" : "python3";
   const scriptPath = path.join(__dirname, "python_ocr", "app.py");
 
@@ -402,7 +430,10 @@ async function startPythonOcrService() {
 
   pythonProcess.stdout.on("data", (data) => {
     const lines = data.toString().trim().split("\n");
-    lines.forEach((l) => console.log(`[Python-OCR] ${l}`));
+    lines.forEach((l) => {
+      console.log(`[Python-OCR] ${l}`);
+      addLog("python_stdout", l);
+    });
   });
 
   pythonProcess.stderr.on("data", (data) => {
@@ -418,14 +449,17 @@ async function startPythonOcrService() {
                        trimmed.includes("* Tip:");
       if (isAccessLog || isNotice) {
         console.log(`[Python-OCR] ${trimmed}`);
+        addLog("python_info", trimmed);
       } else {
         console.error(`[Python-OCR Error] ${trimmed}`);
+        addLog("python_stderr", trimmed);
       }
     });
   });
 
   pythonProcess.on("close", (code) => {
     console.log(`[Python-OCR] Process exited with code ${code}`);
+    addLog("python_close", `Process exited with code ${code}`);
     pythonProcess = null;
   });
 }
@@ -477,9 +511,11 @@ process.on("SIGINT", () => handleShutdown("SIGINT"));
 process.on("SIGTERM", () => handleShutdown("SIGTERM"));
 process.on("unhandledRejection", (reason, promise) => {
   console.error("[Unhandled Rejection]", reason);
+  addLog("unhandledRejection", reason?.stack || reason?.message || String(reason));
 });
 process.on("uncaughtException", (error) => {
   console.error("[Uncaught Exception]", error);
+  addLog("uncaughtException", error?.stack || error?.message || String(error));
 });
 
 module.exports = app;

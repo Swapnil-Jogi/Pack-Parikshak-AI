@@ -20,13 +20,15 @@ class OcrService {
     // 1. Instant 1-Click Sample Pre-computed Result Cache
     // Guarantees zero latency and 100% resilience against cloud container RAM constraints
     const normPath = (imagePath || "").toLowerCase();
-    if (sampleType === "wheat_flour" || normPath.includes("compliant_wheat_flour")) {
-      console.log("[OCR-Service] Serving instant high-accuracy result for compliant wheat flour sample.");
-      return JSON.parse(JSON.stringify(sampleOcrData.sampleWheatFlour));
-    }
-    if (sampleType === "snack_pack" || normPath.includes("violating_snack_pack")) {
-      console.log("[OCR-Service] Serving instant high-accuracy result for violating snack pack sample.");
-      return JSON.parse(JSON.stringify(sampleOcrData.sampleSnackPack));
+    if (sampleType !== "diagnostics_force_python") {
+      if (sampleType === "wheat_flour" || normPath.includes("compliant_wheat_flour")) {
+        console.log("[OCR-Service] Serving instant high-accuracy result for compliant wheat flour sample.");
+        return JSON.parse(JSON.stringify(sampleOcrData.sampleWheatFlour));
+      }
+      if (sampleType === "snack_pack" || normPath.includes("violating_snack_pack")) {
+        console.log("[OCR-Service] Serving instant high-accuracy result for violating snack pack sample.");
+        return JSON.parse(JSON.stringify(sampleOcrData.sampleSnackPack));
+      }
     }
 
     if (!fs.existsSync(imagePath)) {

@@ -95,35 +95,35 @@ class OcrService {
         console.warn(`[OCR-Service] Standalone execution encountered error: ${fallbackErr.message}`);
       }
     }
-      console.warn(`[OCR-Service] Both microservice and standalone execution encountered errors: ${fallbackErr.message}. Generating resilient fallback sandbox record.`);
-      // 4. Resilient Fallback: Never crash the user request or 502 Render container
-      return {
-        success: true,
-        fallback: true,
-        image_dims: { width: 800, height: 600 },
-        raw_text: "Packaging image uploaded. OCR text extraction could not complete automatically due to resource limits. Please verify statutory declarations using the fields on the right.",
-        boxes: [],
-        structured: {
-          commodityName: "Packaged Commodity",
-          netQuantity: "",
-          mrp: "",
-          mrpNumeric: 0,
-          hasInclusiveOfTaxes: false,
-          mfgDate: "",
-          expDate: "",
-          manufacturer: "",
-          productAddress: "",
-          customerCarePhone: "",
-          customerCareEmail: "",
-          customerCareAddress: "",
-          countryOfOrigin: "",
-          batchNo: "",
-          unitSalePrice: "",
-          unit: ""
-        },
-        total_detections: 0
-      };
-    }
+
+    // 4. Resilient Fallback: Never crash the user request or 502 Render container
+    console.warn("[OCR-Service] Generating resilient fallback sandbox record for inspection.");
+    return {
+      success: true,
+      fallback: true,
+      image_dims: { width: 800, height: 600 },
+      raw_text: "Packaging image uploaded. OCR text extraction could not complete automatically due to resource limits. Please verify statutory declarations using the fields on the right.",
+      boxes: [],
+      structured: {
+        commodityName: "Packaged Commodity",
+        netQuantity: "",
+        mrp: "",
+        mrpNumeric: 0,
+        hasInclusiveOfTaxes: false,
+        mfgDate: "",
+        expDate: "",
+        manufacturer: "",
+        productAddress: "",
+        customerCarePhone: "",
+        customerCareEmail: "",
+        customerCareAddress: "",
+        countryOfOrigin: "",
+        batchNo: "",
+        unitSalePrice: "",
+        unit: ""
+      },
+      total_detections: 0
+    };
   }
 }
 

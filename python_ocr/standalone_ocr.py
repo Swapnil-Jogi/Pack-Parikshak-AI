@@ -41,8 +41,9 @@ def run_standalone(image_path):
 
         ocr = RapidOCR(text_score=0.35, use_angle_cls=False)
         if hasattr(ocr, 'text_detector'):
-            ocr.text_detector.limit_side_len = 640
-            ocr.text_detector.limit_type = 'max'
+            if hasattr(ocr.text_detector, 'preprocess_op') and len(ocr.text_detector.preprocess_op) > 0:
+                ocr.text_detector.preprocess_op[0].limit_side_len = 640
+                ocr.text_detector.preprocess_op[0].limit_type = 'max'
             if hasattr(ocr.text_detector, 'postprocess_op'):
                 ocr.text_detector.postprocess_op.unclip_ratio = 1.9
                 ocr.text_detector.postprocess_op.box_thresh = 0.45

@@ -32,7 +32,9 @@ exports.postUploadScan = async (req, res) => {
       localPath = req.file.path;
       imageUrl = `/uploads/${req.file.filename}`;
     } else {
-      req.session.errorMessage = "Please upload an image file or choose a sample packaging label.";
+      if (req.session) {
+        req.session.errorMessage = "Please upload an image file or choose a sample packaging label.";
+      }
       return res.redirect("/inspections/new");
     }
 
@@ -83,7 +85,12 @@ exports.postUploadScan = async (req, res) => {
     res.redirect(`/inspections/${inspection._id}/sandbox`);
   } catch (error) {
     console.error("[Inspection] Upload & OCR failed:", error);
-    req.session.errorMessage = `OCR processing failed: ${error.message}`;
+    if (req.session) {
+      req.session.errorMessage = `OCR processing failed: ${error.message}`;
+    }
+    if (req.xhr || req.headers.accept?.includes("application/json")) {
+      return res.status(500).json({ success: false, error: error.message });
+    }
     res.redirect("/inspections/new");
   }
 };

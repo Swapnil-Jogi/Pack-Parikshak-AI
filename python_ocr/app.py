@@ -47,8 +47,9 @@ try:
     )
     # Tune detector parameters for packaging labels & cap max side length to 640px
     if hasattr(ocr_engine, 'text_detector'):
-        ocr_engine.text_detector.limit_side_len = 640
-        ocr_engine.text_detector.limit_type = 'max'
+        if hasattr(ocr_engine.text_detector, 'preprocess_op') and len(ocr_engine.text_detector.preprocess_op) > 0:
+            ocr_engine.text_detector.preprocess_op[0].limit_side_len = 640
+            ocr_engine.text_detector.preprocess_op[0].limit_type = 'max'
         if hasattr(ocr_engine.text_detector, 'postprocess_op'):
             ocr_engine.text_detector.postprocess_op.unclip_ratio = 1.9
             ocr_engine.text_detector.postprocess_op.box_thresh = 0.45

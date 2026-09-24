@@ -45,13 +45,16 @@ try:
         text_score=0.35,
         use_angle_cls=False
     )
-    # Tune detector parameters for packaging labels & cap max side length to 736px
+    # Tune detector parameters for packaging labels & cap max side length to 640px
     if hasattr(ocr_engine, 'text_detector'):
-        ocr_engine.text_detector.limit_side_len = 736
+        ocr_engine.text_detector.limit_side_len = 640
         ocr_engine.text_detector.limit_type = 'max'
         if hasattr(ocr_engine.text_detector, 'postprocess_op'):
             ocr_engine.text_detector.postprocess_op.unclip_ratio = 1.9
             ocr_engine.text_detector.postprocess_op.box_thresh = 0.45
+            ocr_engine.text_detector.postprocess_op.max_candidates = 500
+    if hasattr(ocr_engine, 'text_recognizer'):
+        ocr_engine.text_recognizer.rec_batch_num = 1
     layout_parser = PackagingLayoutParser()
     print("[Python-OCR] Ultra-low-memory PaddleOCR Engine initialized and ready.", flush=True)
 
@@ -182,8 +185,8 @@ if __name__ == '__main__':
     try:
         from waitress import serve
         print(f"[Python-OCR] Starting Production WSGI Server (Waitress) on {host}:{port}...", flush=True)
-        serve(app, host=host, port=port, threads=2)
+        serve(app, host=host, port=port, threads=1)
     except ImportError:
         print(f"[Python-OCR] Starting Flask OCR Microservice on {host}:{port}...", flush=True)
-        app.run(host=host, port=port, debug=False, threaded=True)
+        app.run(host=host, port=port, debug=False, threaded=False)
 

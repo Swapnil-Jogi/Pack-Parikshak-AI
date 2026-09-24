@@ -30,16 +30,16 @@ class ImagePreprocessor:
         scale = 1.0
 
         # Memory safeguard:
-        # Scale down large images (> 800px) to strictly maintain low memory profile on 512MB containers.
-        # RapidOCR's internal DBNet operates with high precision at 640-800px.
-        # Only upscale very tiny images (< 400px) to conserve RAM.
-        if max_dim > 800.0:
-            scale = 800.0 / max_dim
+        # Scale down large images (> 640px) to strictly maintain low memory profile on 512MB containers.
+        # RapidOCR's internal DBNet operates with high precision at 512-640px.
+        # Only upscale very tiny images (< 360px) to conserve RAM.
+        if max_dim > 640.0:
+            scale = 640.0 / max_dim
             new_w = int(round(w * scale))
             new_h = int(round(h * scale))
             bgr = cv2.resize(bgr, (new_w, new_h), interpolation=cv2.INTER_AREA)
-        elif max_dim < 400.0:
-            scale = 400.0 / max_dim
+        elif max_dim < 360.0:
+            scale = 360.0 / max_dim
             new_w = int(round(w * scale))
             new_h = int(round(h * scale))
             bgr = cv2.resize(bgr, (new_w, new_h), interpolation=cv2.INTER_LINEAR)

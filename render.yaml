@@ -14,8 +14,6 @@ services:
         value: 5000
       - key: PYTHON_OCR_HOST
         value: 127.0.0.1
-      - key: NODE_OPTIONS
-        value: "--max-old-space-size=96"
       - key: OMP_NUM_THREADS
         value: "1"
       - key: OPENBLAS_NUM_THREADS

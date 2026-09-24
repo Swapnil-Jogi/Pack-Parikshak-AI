@@ -60,5 +60,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=35s --retries=3 \
     CMD curl -f http://localhost:${PORT:-8080}/api/health || exit 1
 
 # Start Unified Node.js Server & Python Microservice
-CMD ["node", "--max-old-space-size=256", "app.js"]
+CMD ["node", "--max-old-space-size=160", "app.js"]
 

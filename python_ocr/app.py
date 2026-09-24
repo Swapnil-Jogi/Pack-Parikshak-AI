@@ -45,10 +45,10 @@ try:
         text_score=0.35,
         use_angle_cls=False
     )
-    # Tune detector parameters for packaging labels & cap max side length to 640px
+    # Tune detector parameters for packaging labels & cap max side length to 480px
     if hasattr(ocr_engine, 'text_detector'):
         if hasattr(ocr_engine.text_detector, 'preprocess_op') and len(ocr_engine.text_detector.preprocess_op) > 0:
-            ocr_engine.text_detector.preprocess_op[0].limit_side_len = 640
+            ocr_engine.text_detector.preprocess_op[0].limit_side_len = 480
             ocr_engine.text_detector.preprocess_op[0].limit_type = 'max'
         if hasattr(ocr_engine.text_detector, 'postprocess_op'):
             ocr_engine.text_detector.postprocess_op.unclip_ratio = 1.9
@@ -57,7 +57,7 @@ try:
     if hasattr(ocr_engine, 'text_recognizer'):
         ocr_engine.text_recognizer.rec_batch_num = 1
     layout_parser = PackagingLayoutParser()
-    print("[Python-OCR] Ultra-low-memory PaddleOCR Engine initialized and ready.", flush=True)
+    print("[Python-OCR] Ultra-low-memory PaddleOCR Engine initialized and ready (480px profile).", flush=True)
 
     # Pre-warm detector and recognizer ONNX graphs with a tiny text image
     try:
@@ -78,6 +78,7 @@ except Exception as e:
 
 def process_image(img_pil):
     orig_w, orig_h = img_pil.size
+    print(f"[Python-OCR Process] Starting processing for image: {orig_w}x{orig_h}", flush=True)
     img_np = np.array(img_pil.convert('RGB'))
 
     if ocr_engine is None:
@@ -85,12 +86,17 @@ def process_image(img_pil):
 
     try:
         # 1. Advanced Preprocessing: CLAHE contrast, gentle scale, unsharp masking
+        print("[Python-OCR Process] Preprocessing image...", flush=True)
         enhanced_rgb, scale = ImagePreprocessor.preprocess_for_ocr(img_np)
         del img_np
+        print(f"[Python-OCR Process] Preprocessing complete: shape={enhanced_rgb.shape}, scale={scale:.3f}", flush=True)
 
         # 2. Run OCR on enhanced image
+        print("[Python-OCR Process] Running OCR engine inference...", flush=True)
         result, elapse = ocr_engine(enhanced_rgb)
         del enhanced_rgb
+        box_count = len(result) if result else 0
+        print(f"[Python-OCR Process] OCR inference finished in {elapse:.2f}s with {box_count} text boxes", flush=True)
         raw_boxes = []
 
         if result:
@@ -110,7 +116,9 @@ def process_image(img_pil):
                 })
 
         # 3. Spatial & semantic layout parsing using font-tolerant heuristics
+        print(f"[Python-OCR Process] Running layout parser on {len(raw_boxes)} boxes...", flush=True)
         structured, full_text = layout_parser.parse(raw_boxes, image_width=orig_w, image_height=orig_h)
+        print("[Python-OCR Process] Structured parsing complete!", flush=True)
 
         return {
             'success': True,
@@ -120,6 +128,9 @@ def process_image(img_pil):
             'structured': structured,
             'total_detections': len(raw_boxes)
         }
+    except Exception as proc_err:
+        print(f"[Python-OCR Process Error] Failed: {proc_err}", file=sys.stderr, flush=True)
+        raise proc_err
     finally:
         gc.collect()
 
@@ -149,19 +160,25 @@ def health():
 def run_ocr():
     try:
         img_pil = None
+        print(f"[Python-OCR Request] Received OCR request. Content-Type: {request.content_type}", flush=True)
 
         # Check for uploaded file
         if 'image' in request.files:
             file = request.files['image']
             img_pil = Image.open(file.stream)
+            print(f"[Python-OCR Request] Read file from request.files['image']", flush=True)
         elif 'file' in request.files:
             file = request.files['file']
             img_pil = Image.open(file.stream)
+            print(f"[Python-OCR Request] Read file from request.files['file']", flush=True)
         # Check for JSON payload
         elif request.is_json:
             data = request.get_json()
-            if 'image_path' in data and os.path.exists(data['image_path']):
-                img_pil = Image.open(data['image_path'])
+            if 'image_path' in data:
+                img_path = data['image_path']
+                print(f"[Python-OCR Request] Image path requested: {img_path} (exists={os.path.exists(img_path)})", flush=True)
+                if os.path.exists(img_path):
+                    img_pil = Image.open(img_path)
             elif 'base64_image' in data:
                 b64_data = data['base64_image']
                 if ',' in b64_data:
@@ -170,6 +187,7 @@ def run_ocr():
                 img_pil = Image.open(io.BytesIO(img_bytes))
 
         if img_pil is None:
+            print("[Python-OCR Request Error] No valid image could be resolved from request payload.", flush=True)
             return jsonify({'success': False, 'error': 'No image provided. Upload a file or provide image_path/base64_image.'}), 400
 
         res = process_image(img_pil)

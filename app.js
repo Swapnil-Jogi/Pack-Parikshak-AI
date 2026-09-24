@@ -325,12 +325,27 @@ app.get("/api/health", async (req, res) => {
   }
 });
 
-app.get("/api/debug/logs", (req, res) => {
-  res.json({
-    uptime: process.uptime(),
-    memory: process.memoryUsage(),
-    logs: recentLogs
-  });
+app.get("/api/debug/logs", async (req, res) => {
+  try {
+    let persistentLogs = [];
+    const Model = getSystemLogModel();
+    if (Model) {
+      persistentLogs = await Model.find().sort({ _id: -1 }).limit(100).lean();
+    }
+    res.json({
+      uptime: process.uptime(),
+      memory: process.memoryUsage(),
+      inMemoryLogs: recentLogs,
+      persistentLogs: persistentLogs.reverse()
+    });
+  } catch (err) {
+    res.json({
+      uptime: process.uptime(),
+      memory: process.memoryUsage(),
+      inMemoryLogs: recentLogs,
+      error: err.message
+    });
+  }
 });
 
 app.get("/api/debug/test-ocr", async (req, res) => {
@@ -387,10 +402,54 @@ app.use((err, req, res, next) => {
 // -------------------------------------------------------------
 let pythonProcess = null;
 const recentLogs = [];
-function addLog(source, msg) {
-  recentLogs.push({ time: new Date().toISOString(), source, msg: String(msg).slice(0, 500) });
-  if (recentLogs.length > 100) recentLogs.shift();
+
+let SystemLog = null;
+function getSystemLogModel() {
+  if (!SystemLog && mongoose.connection.readyState === 1) {
+    try {
+      SystemLog = mongoose.models.SystemLog || mongoose.model(
+        "SystemLog",
+        new mongoose.Schema(
+          { time: { type: Date, default: Date.now }, source: String, msg: String },
+          { collection: "system_logs", timestamps: true }
+        )
+      );
+    } catch (e) {}
+  }
+  return SystemLog;
 }
+
+function addLog(source, msg) {
+  const text = String(msg).slice(0, 1000);
+  recentLogs.push({ time: new Date().toISOString(), source, msg: text });
+  if (recentLogs.length > 100) recentLogs.shift();
+
+  try {
+    const Model = getSystemLogModel();
+    if (Model) {
+      Model.create({ source, msg: text }).catch(() => {});
+    }
+  } catch (e) {}
+}
+
+const origLog = console.log;
+const origWarn = console.warn;
+const origError = console.error;
+console.log = (...args) => {
+  origLog(...args);
+  const msg = args.map(a => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ');
+  addLog('stdout', msg);
+};
+console.warn = (...args) => {
+  origWarn(...args);
+  const msg = args.map(a => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ');
+  addLog('warn', msg);
+};
+console.error = (...args) => {
+  origError(...args);
+  const msg = args.map(a => (typeof a === 'object' ? (a.stack || JSON.stringify(a)) : String(a))).join(' ');
+  addLog('stderr', msg);
+};
 
 async function checkOcrServiceHealth() {
   try {

@@ -22,7 +22,8 @@ const app = express();
 const port = parseInt(process.env.PORT, 10) || 8080;
 const pythonOcrPort = parseInt(process.env.PYTHON_OCR_PORT, 10) || 5000;
 const isProd = process.env.NODE_ENV === "production";
-const mongoUri = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/pack_parikshak";
+const rawMongoUri = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/pack_parikshak";
+const cleanMongoUri = connectDB.sanitizeMongoUri(rawMongoUri);
 
 // Trust first proxy when in production (e.g. Render, Nginx, AWS, Cloudflare)
 if (isProd) {
@@ -144,16 +145,28 @@ app.use("/inspections/upload", scanLimiter);
 app.use("/api/scan", scanLimiter);
 app.use("/api", apiLimiter);
 
-// 5. Session Configuration with Persistent MongoDB Store
-const sessionStore = MongoStore.create({
-  mongoUrl: mongoUri,
-  collectionName: "sessions",
-  ttl: 7 * 24 * 60 * 60, // 7 days in seconds
-  autoRemove: "native"
-});
-sessionStore.on("error", (err) => {
-  console.warn("[Session-Store] Persistent store connection warning:", err.message);
-});
+// 5. Session Configuration with Persistent MongoDB Store & In-Memory Fallback
+const uriValidation = connectDB.validateMongoUri(cleanMongoUri);
+let sessionStore = undefined;
+
+if (uriValidation.valid) {
+  try {
+    sessionStore = MongoStore.create({
+      mongoUrl: cleanMongoUri,
+      collectionName: "sessions",
+      ttl: 7 * 24 * 60 * 60, // 7 days in seconds
+      autoRemove: "native"
+    });
+    sessionStore.on("error", (err) => {
+      console.warn("[Session-Store] Persistent store connection warning:", err.message);
+    });
+  } catch (storeErr) {
+    console.error("[Session-Store] Failed to initialize MongoStore, falling back to MemoryStore:", storeErr.message);
+    sessionStore = undefined;
+  }
+} else {
+  console.warn("[Session-Store] Skipping MongoStore initialization due to connection URI issue. Falling back to MemoryStore.");
+}
 
 app.use(
   session({
@@ -212,13 +225,17 @@ async function getSystemHealth() {
   const formatMb = (bytes) => `${(bytes / 1024 / 1024).toFixed(2)} MB`;
 
   const mongoConfigured = Boolean(process.env.MONGODB_URI && !process.env.MONGODB_URI.includes("127.0.0.1") && !process.env.MONGODB_URI.includes("localhost"));
-  const dbHint = dbStatus === "connected"
-    ? "Database operational"
-    : (!mongoConfigured && isProd
-        ? "MONGODB_URI is not set in Render. In Render Dashboard -> Environment, add MONGODB_URI with your MongoDB Atlas connection string."
-        : "Database disconnected. Check MongoDB Atlas Network Access (whitelist 0.0.0.0/0) and credentials.");
-
   const lastDbError = connectDB.getLastError ? connectDB.getLastError() : null;
+  let dbHint = "Database operational";
+  if (dbStatus !== "connected") {
+    if (lastDbError) {
+      dbHint = `Connection issue: ${lastDbError}. Check Render Environment MONGODB_URI and MongoDB Atlas Network Access.`;
+    } else if (!mongoConfigured && isProd) {
+      dbHint = "MONGODB_URI is not set in Render. In Render Dashboard -> Environment, add MONGODB_URI with your MongoDB Atlas connection string.";
+    } else {
+      dbHint = "Database disconnected. Check MongoDB Atlas Network Access (whitelist 0.0.0.0/0) and credentials.";
+    }
+  }
 
   return {
     status: dbStatus === "connected" && ocrHealthy ? "healthy" : "degraded",
@@ -322,6 +339,9 @@ app.use((req, res) => {
 
 app.use((err, req, res, next) => {
   console.error("[Server Error]", err);
+  if (res.headersSent) {
+    return next(err);
+  }
   res.status(500).render("errors/500.ejs", {
     title: "500 Server Error | Pack-Parikshak AI",
     message: isProd

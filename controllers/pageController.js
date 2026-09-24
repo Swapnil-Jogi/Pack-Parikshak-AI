@@ -1,11 +1,28 @@
+const mongoose = require("mongoose");
 const Inspection = require("../models/Inspection");
 
 // Home Landing Page
 exports.getHome = async (req, res) => {
   try {
-    const totalCount = await Inspection.countDocuments();
-    const compliantCount = await Inspection.countDocuments({ complianceStatus: "COMPLIANT" });
-    const violationCount = await Inspection.countDocuments({ complianceStatus: "NON_COMPLIANT" });
+    let totalCount = 1420;
+    let compliantCount = 1080;
+    let violationCount = 340;
+
+    // Only query database when MongoDB is actively connected; avoids 10s Mongoose buffering timeout
+    if (mongoose.connection.readyState === 1) {
+      try {
+        const [tot, comp, viol] = await Promise.all([
+          Inspection.countDocuments().maxTimeMS(2000),
+          Inspection.countDocuments({ complianceStatus: "COMPLIANT" }).maxTimeMS(2000),
+          Inspection.countDocuments({ complianceStatus: "NON_COMPLIANT" }).maxTimeMS(2000)
+        ]);
+        totalCount = tot;
+        compliantCount = comp;
+        violationCount = viol;
+      } catch (dbErr) {
+        console.warn("[Page] DB query skipped/timed out, using baseline stats:", dbErr.message);
+      }
+    }
 
     res.render("index.ejs", {
       title: "Pack-Parikshak AI | Legal Metrology Packaged Commodities Portal",
@@ -18,12 +35,14 @@ exports.getHome = async (req, res) => {
       }
     });
   } catch (err) {
-    console.error("[Page] Error on home page:", err);
-    res.render("index.ejs", {
-      title: "Pack-Parikshak AI",
-      user: req.user,
-      stats: { total: 1420, compliant: 1080, violations: 340, rate: 76 }
-    });
+    console.error("[Page] Error on home page:", err.message);
+    if (!res.headersSent) {
+      res.render("index.ejs", {
+        title: "Pack-Parikshak AI",
+        user: req.user,
+        stats: { total: 1420, compliant: 1080, violations: 340, rate: 76 }
+      });
+    }
   }
 };
 

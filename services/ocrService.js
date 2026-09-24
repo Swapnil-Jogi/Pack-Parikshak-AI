@@ -24,7 +24,7 @@ class OcrService {
       const response = await axios.post(
         this.microserviceUrl,
         { image_path: imagePath },
-        { timeout: 15000, headers: { "Content-Type": "application/json" } }
+        { timeout: 60000, headers: { "Content-Type": "application/json" } }
       );
 
       if (response.data && response.data.success) {
@@ -40,7 +40,7 @@ class OcrService {
       execFile(
         pythonCmd,
         [this.standaloneScriptPath, imagePath],
-        { maxBuffer: 10 * 1024 * 1024, timeout: 30000 },
+        { maxBuffer: 10 * 1024 * 1024, timeout: 60000 },
         (error, stdout, stderr) => {
           if (error) {
             console.error("[OCR-Service] Standalone execution error:", stderr || error.message);

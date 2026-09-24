@@ -28,6 +28,14 @@ try:
         ocr_engine.text_detector.postprocess_op.box_thresh = 0.45   # Catch faint or thin-font text lines
     layout_parser = PackagingLayoutParser()
     print("[Python-OCR] Enhanced PaddleOCR Engine initialized and ready.", flush=True)
+
+    # Pre-warm ONNX execution graphs with dummy image to eliminate cold-start inference latency
+    try:
+        dummy_img = np.zeros((128, 128, 3), dtype=np.uint8)
+        ocr_engine(dummy_img)
+        print("[Python-OCR] ONNX runtime execution graphs warmed up and ready for instant inference.", flush=True)
+    except Exception as warm_err:
+        pass
 except Exception as e:
     print(f"[Python-OCR] Error initializing OCR engine: {e}", file=sys.stderr, flush=True)
     ocr_engine = None

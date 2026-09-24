@@ -21,6 +21,13 @@ const seedData = async (clean = false) => {
       console.log("[Seed] Cleared existing data.");
     }
 
+    // Ensure stale username index from old schemas is dropped
+    try {
+      await mongoose.connection.collection("users").dropIndex("username_1");
+    } catch (idxErr) {
+      // Index not found or already dropped
+    }
+
     // 1. Create or ensure Default Users
     let officer = await User.findOne({ email: "officer@delhi.lm.gov.in" });
     if (!officer) {

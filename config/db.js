@@ -115,6 +115,7 @@ const connectDB = async () => {
     console.log(`[MongoDB] Connected successfully to: ${conn.connection.host}/${conn.connection.name}`);
     isConnecting = false;
     lastDbError = null;
+    await cleanLegacyIndexes();
     return conn;
   } catch (error) {
     console.error(`[MongoDB] Connection failed: ${error.message}`);
@@ -129,9 +130,30 @@ const connectDB = async () => {
   }
 };
 
+async function cleanLegacyIndexes() {
+  try {
+    if (mongoose.connection.readyState === 1) {
+      const userColl = mongoose.connection.collection("users");
+      const indexes = await userColl.indexes();
+      for (const idx of indexes) {
+        if (idx.name === "username_1" || (idx.key && idx.key.username)) {
+          console.log(`[MongoDB] Dropping stale legacy index '${idx.name}' from users collection...`);
+          await userColl.dropIndex(idx.name);
+          console.log(`[MongoDB] Stale index '${idx.name}' successfully dropped.`);
+        }
+      }
+    }
+  } catch (err) {
+    if (!err.message.includes("ns not found") && !err.message.includes("index not found")) {
+      console.warn("[MongoDB] Notice checking legacy indexes:", err.message);
+    }
+  }
+}
+
 mongoose.connection.on("connected", () => {
   console.log(`[MongoDB Event] Connected to host: ${mongoose.connection.host}`);
   lastDbError = null;
+  cleanLegacyIndexes().catch(() => {});
 });
 
 mongoose.connection.on("error", (err) => {

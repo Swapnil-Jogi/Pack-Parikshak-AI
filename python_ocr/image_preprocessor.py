@@ -29,17 +29,21 @@ class ImagePreprocessor:
 
         h, w = bgr.shape[:2]
 
-        # 1. Intelligent Scale-Up for Fine Print & Varied Fonts
-        # Declarations under Rule 7 can be small numerals (e.g. 1mm-3mm).
-        # Upscaling ensures character strokes are >= 32px high for the recognition CNN.
+        # 1. Intelligent Scale for Packaging OCR
+        # Scale down excessively large images (> 1920px) to prevent memory and CPU timeouts on cloud tiers,
+        # or upscale small images (< 1200px) so fine-print declarations (Rule 7) are crisp for OCR CNN.
         scale = 1.0
         target_min_dim = 1200.0
-        max_dim = max(h, w)
-        if max_dim < target_min_dim:
-            scale = target_min_dim / float(max_dim)
+        max_dim = float(max(h, w))
+        if max_dim > 1920.0:
+            scale = 1920.0 / max_dim
             new_w = int(round(w * scale))
             new_h = int(round(h * scale))
-            # Use Lanczos / Cubic interpolation to keep text edges crisp without pixelation
+            bgr = cv2.resize(bgr, (new_w, new_h), interpolation=cv2.INTER_AREA)
+        elif max_dim < target_min_dim:
+            scale = target_min_dim / max_dim
+            new_w = int(round(w * scale))
+            new_h = int(round(h * scale))
             bgr = cv2.resize(bgr, (new_w, new_h), interpolation=cv2.INTER_CUBIC)
 
         # 2. Local Luminance Contrast Enhancement via CLAHE in LAB Color Space

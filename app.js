@@ -386,7 +386,21 @@ async function startPythonOcrService() {
 
   pythonProcess.stderr.on("data", (data) => {
     const lines = data.toString().trim().split("\n");
-    lines.forEach((l) => console.error(`[Python-OCR Error] ${l}`));
+    lines.forEach((l) => {
+      const trimmed = l.trim();
+      if (!trimmed) return;
+      // Filter out benign access logs, server notices, and dev tips
+      const isAccessLog = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3} - -/.test(trimmed);
+      const isNotice = trimmed.includes("* Running on") ||
+                       trimmed.includes("Press CTRL+C") ||
+                       trimmed.includes("WARNING: This is a development server") ||
+                       trimmed.includes("* Tip:");
+      if (isAccessLog || isNotice) {
+        console.log(`[Python-OCR] ${trimmed}`);
+      } else {
+        console.error(`[Python-OCR Error] ${trimmed}`);
+      }
+    });
   });
 
   pythonProcess.on("close", (code) => {

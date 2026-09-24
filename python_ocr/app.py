@@ -75,7 +75,20 @@ def process_image(img_pil):
         'total_detections': len(raw_boxes)
     }
 
-@app.route('/health', methods=['GET'])
+@app.route('/', methods=['GET', 'HEAD'])
+def root():
+    return jsonify({
+        'status': 'healthy',
+        'service': 'Pack-Parikshak PaddleOCR Microservice',
+        'version': '1.0.0',
+        'engine': 'PaddleOCR (RapidOCR PP-OCRv4 ONNX)',
+        'endpoints': {
+            'health': '/health',
+            'ocr': '/api/ocr'
+        }
+    })
+
+@app.route('/health', methods=['GET', 'HEAD'])
 def health():
     return jsonify({
         'status': 'healthy',
@@ -122,6 +135,11 @@ def run_ocr():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', os.environ.get('PYTHON_OCR_PORT', 5000)))
     host = os.environ.get('PYTHON_OCR_HOST', '127.0.0.1')
-    print(f"[Python-OCR] Starting Flask OCR Microservice on {host}:{port}...", flush=True)
-    app.run(host=host, port=port, debug=False, threaded=True)
+    try:
+        from waitress import serve
+        print(f"[Python-OCR] Starting Production WSGI Server (Waitress) on {host}:{port}...", flush=True)
+        serve(app, host=host, port=port, threads=4)
+    except ImportError:
+        print(f"[Python-OCR] Starting Flask OCR Microservice on {host}:{port}...", flush=True)
+        app.run(host=host, port=port, debug=False, threaded=True)
 

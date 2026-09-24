@@ -38,17 +38,27 @@ exports.getLogin = (req, res) => {
 
 // Handle Login POST
 exports.postLogin = (req, res, next) => {
+  const loginRole = req.body.role || req.query.role || "user";
   passport.authenticate("local", (err, user, info) => {
     if (err) return next(err);
     if (!user) {
       const msg = info ? info.message : "Invalid email or password.";
       req.flash("error", msg);
-      return res.redirect("/auth/login" + (req.query.role ? `?role=${req.query.role}` : ""));
+      return res.redirect("/auth/login" + (loginRole === "officer" ? "?role=officer" : ""));
     }
+
+    // Role check: If user specifically clicked Officer tab to log in, verify they possess officer role
+    if (loginRole === "officer" && user.role !== "officer") {
+      req.flash("error", `Access Denied: The account "${user.email}" is registered as a Consumer, not an Enforcement Officer. Please use the Consumer Sign In tab, or register an Official Officer account.`);
+      return res.redirect("/auth/login?role=officer");
+    }
+
     req.logIn(user, (loginErr) => {
       if (loginErr) return next(loginErr);
 
-      req.flash("success", `Welcome back, ${user.name}!`);
+      req.flash("success", user.role === "officer"
+        ? `Official Enforcement Officer verified! Welcome Inspector ${user.name}.`
+        : `Welcome back, ${user.name}!`);
 
       // Redirect to returnTo destination or role dashboard
       let destination;

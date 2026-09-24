@@ -29,29 +29,30 @@
       </div>
     <% } %>
 
-    <!-- Real User / Officer Role Switcher Tabs -->
+    <!-- Real User / Officer Role Switcher Tabs (Zero Reload, Direct Instant Switch) -->
     <div class="flex rounded-xl p-1 bg-slate-200/80 border border-slate-300 shadow-xs">
-      <a href="/auth/login?role=user<%= typeof returnTo !== 'undefined' && returnTo ? '&returnTo=' + encodeURIComponent(returnTo) : '' %>" class="flex-1 text-center py-2 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 <%= activeRole !== 'officer' ? 'bg-white text-govblue shadow-sm' : 'text-slate-600 hover:text-slate-900' %>">
+      <button type="button" onclick="switchLoginRole('user')" id="tabLoginUser" class="flex-1 text-center py-2 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer border-0 <%= activeRole !== 'officer' ? 'bg-white text-govblue shadow-sm' : 'text-slate-600 hover:text-slate-900 bg-transparent' %>">
         <i class="fa-solid fa-user"></i> <%= t('roleConsumer') %>
-      </a>
-      <a href="/auth/login?role=officer<%= typeof returnTo !== 'undefined' && returnTo ? '&returnTo=' + encodeURIComponent(returnTo) : '' %>" class="flex-1 text-center py-2 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 <%= activeRole === 'officer' ? 'bg-govblue text-white shadow-sm' : 'text-slate-600 hover:text-slate-900' %>">
+      </button>
+      <button type="button" onclick="switchLoginRole('officer')" id="tabLoginOfficer" class="flex-1 text-center py-2 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer border-0 <%= activeRole === 'officer' ? 'bg-govblue text-white shadow-sm' : 'text-slate-600 hover:text-slate-900 bg-transparent' %>">
         <i class="fa-solid fa-shield-halved text-amber-400"></i> <%= t('roleOfficer') %>
-      </a>
+      </button>
     </div>
 
     <!-- Main Login Form -->
     <div class="bg-white py-8 px-6 shadow-sm rounded-xl border border-slate-200">
-      <form action="/auth/login" method="POST" class="space-y-4">
+      <form action="/auth/login" method="POST" class="space-y-4" id="loginForm">
         <input type="hidden" name="returnTo" value="<%= typeof returnTo !== 'undefined' ? returnTo : '' %>">
+        <input type="hidden" name="role" id="inputLoginRoleHidden" value="<%= activeRole %>">
         <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">
+          <label class="block text-xs font-semibold text-slate-700 mb-1" id="labelLoginEmail">
             <%= activeRole === 'officer' ? t('officerEmailLabel') : t('emailLabel') %>
           </label>
           <div class="relative">
             <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-xs">
               <i class="fa-solid fa-envelope"></i>
             </span>
-            <input type="email" name="email" required 
+            <input type="email" name="email" id="inputLoginEmail" required 
               placeholder="<%= activeRole === 'officer' ? 'officer@delhi.lm.gov.in' : 'consumer@example.com' %>"
               class="form-control text-xs pl-9 py-2 border-slate-300 focus:border-govblue focus:ring-govblue rounded-lg">
           </div>
@@ -68,18 +69,93 @@
           </div>
         </div>
 
-        <button type="submit" class="w-full btn bg-govblue hover:bg-govblue-dark text-white font-bold text-xs py-2.5 rounded-lg shadow transition">
-          <i class="fa-solid fa-arrow-right-to-bracket me-1"></i> <%= t('btnSignIn') %>
+        <button type="submit" id="btnLoginSubmit" class="w-full btn bg-govblue hover:bg-govblue-dark text-white font-bold text-xs py-2.5 rounded-lg shadow transition">
+          <% if (activeRole === 'officer') { %>
+            <i class="fa-solid fa-shield-halved text-amber-400 me-1"></i> Sign In to Officer Portal
+          <% } else { %>
+            <i class="fa-solid fa-arrow-right-to-bracket me-1"></i> <%= t('btnSignIn') %>
+          <% } %>
         </button>
       </form>
 
       <div class="mt-6 pt-4 border-t border-slate-100 text-center text-xs text-slate-500">
         <%= t('newToPortal') %>
-        <a href="/auth/register<%= (activeRole === 'officer' ? '?role=officer' : '') + (typeof returnTo !== 'undefined' && returnTo ? (activeRole === 'officer' ? '&returnTo=' : '?returnTo=') + encodeURIComponent(returnTo) : '') %>" class="text-govblue-light font-bold hover:underline"><%= t('registerLink') %></a>
+        <a id="linkRegister" href="/auth/register<%= (activeRole === 'officer' ? '?role=officer' : '') + (typeof returnTo !== 'undefined' && returnTo ? (activeRole === 'officer' ? '&returnTo=' : '?returnTo=') + encodeURIComponent(returnTo) : '') %>" class="text-govblue-light font-bold hover:underline"><%= t('registerLink') %></a>
+      </div>
+
+      <!-- Quick 1-Click Demo Login Links -->
+      <div class="mt-4 pt-3 border-t border-slate-100 text-center">
+        <span class="text-[11px] text-slate-400 block mb-2">Need to test immediately?</span>
+        <div class="flex items-center justify-center gap-2">
+          <a href="/auth/demo/consumer" class="btn btn-outline-secondary btn-sm text-[11px] py-1 px-2.5 rounded-lg flex items-center gap-1 font-medium">
+            <i class="fa-solid fa-user text-slate-500"></i> Demo Consumer
+          </a>
+          <a href="/auth/demo/officer" class="btn btn-outline-warning btn-sm text-[11px] py-1 px-2.5 rounded-lg flex items-center gap-1 font-bold text-amber-700 border-amber-400 hover:bg-amber-50">
+            <i class="fa-solid fa-shield-halved text-amber-600"></i> Demo Officer
+          </a>
+        </div>
       </div>
     </div>
 
   </div>
 </main>
+
+<script>
+  function switchLoginRole(role) {
+    const hiddenRole = document.getElementById("inputLoginRoleHidden");
+    const tabUser = document.getElementById("tabLoginUser");
+    const tabOfficer = document.getElementById("tabLoginOfficer");
+    const btnSubmit = document.getElementById("btnLoginSubmit");
+    const emailInput = document.getElementById("inputLoginEmail");
+    const emailLabel = document.getElementById("labelLoginEmail");
+    const headerTitle = document.getElementById("loginHeaderTitle");
+    const headerSub = document.getElementById("loginHeaderSub");
+    const linkRegister = document.getElementById("linkRegister");
+
+    if (hiddenRole) hiddenRole.value = role;
+
+    if (role === "officer") {
+      if (tabUser) {
+        tabUser.classList.remove("bg-white", "text-govblue", "shadow-sm");
+        tabUser.classList.add("text-slate-600", "hover:text-slate-900", "bg-transparent");
+      }
+      if (tabOfficer) {
+        tabOfficer.classList.add("bg-govblue", "text-white", "shadow-sm");
+        tabOfficer.classList.remove("text-slate-600", "hover:text-slate-900", "bg-transparent");
+      }
+      if (emailLabel) emailLabel.innerText = "<%= t('officerEmailLabel') %>";
+      if (emailInput) emailInput.placeholder = "officer@delhi.lm.gov.in";
+      if (btnSubmit) btnSubmit.innerHTML = '<i class="fa-solid fa-shield-halved text-amber-400 me-1"></i> Sign In to Officer Portal';
+      if (headerTitle) headerTitle.innerText = "<%= t('loginOfficerHeader') %>";
+      if (headerSub) headerSub.innerText = "<%= t('loginOfficerSub') %>";
+      if (linkRegister) linkRegister.href = "/auth/register?role=officer";
+      try {
+        const url = new URL(window.location);
+        url.searchParams.set('role', 'officer');
+        window.history.replaceState({}, '', url);
+      } catch (e) {}
+    } else {
+      if (tabOfficer) {
+        tabOfficer.classList.remove("bg-govblue", "text-white", "shadow-sm");
+        tabOfficer.classList.add("text-slate-600", "hover:text-slate-900", "bg-transparent");
+      }
+      if (tabUser) {
+        tabUser.classList.add("bg-white", "text-govblue", "shadow-sm");
+        tabUser.classList.remove("text-slate-600", "hover:text-slate-900", "bg-transparent");
+      }
+      if (emailLabel) emailLabel.innerText = "<%= t('emailLabel') %>";
+      if (emailInput) emailInput.placeholder = "consumer@example.com";
+      if (btnSubmit) btnSubmit.innerHTML = '<i class="fa-solid fa-arrow-right-to-bracket me-1"></i> <%= t("btnSignIn") %>';
+      if (headerTitle) headerTitle.innerText = "<%= t('loginUserHeader') %>";
+      if (headerSub) headerSub.innerText = "<%= t('loginUserSub') %>";
+      if (linkRegister) linkRegister.href = "/auth/register?role=user";
+      try {
+        const url = new URL(window.location);
+        url.searchParams.set('role', 'user');
+        window.history.replaceState({}, '', url);
+      } catch (e) {}
+    }
+  }
+</script>
 
 <%- include('../partials/footer') %>

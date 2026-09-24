@@ -29,6 +29,13 @@ const cleanMongoUri = connectDB.sanitizeMongoUri(rawMongoUri);
 // Trust first proxy when in production (e.g. Render, Nginx, AWS, Cloudflare)
 if (isProd) {
   app.set("trust proxy", 1);
+  // Enforce HTTPS behind Render reverse proxy
+  app.use((req, res, next) => {
+    if (req.headers["x-forwarded-proto"] && req.headers["x-forwarded-proto"] !== "https") {
+      return res.redirect(301, `https://${req.headers.host}${req.url}`);
+    }
+    next();
+  });
 }
 
 // Connect Database & Ensure Demonstration Records are Seeded
@@ -182,7 +189,7 @@ app.use(
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       httpOnly: true,
       sameSite: "lax",
-      secure: isProd
+      secure: isProd ? "auto" : false
     }
   })
 );

@@ -27,14 +27,14 @@
       </div>
     <% } %>
 
-    <!-- Single Unified Role Switcher Tabs (Matches Login page design) -->
+    <!-- Single Unified Role Switcher Tabs (Instant 1-Click Zero-Reload Switch) -->
     <div class="flex rounded-xl p-1 bg-slate-200/80 border border-slate-300 shadow-xs mb-2">
-      <a href="/auth/register?role=user<%= typeof returnTo !== 'undefined' && returnTo ? '&returnTo=' + encodeURIComponent(returnTo) : '' %>" id="tabRoleUser" role="button" class="flex-1 text-center py-2.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer no-underline <%= (typeof activeRole === 'undefined' || activeRole !== 'officer') ? 'bg-white text-govblue shadow-sm' : 'text-slate-600 hover:text-slate-900' %>">
+      <button type="button" onclick="switchRole('user')" id="tabRoleUser" class="flex-1 text-center py-2.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer border-0 <%= (typeof activeRole === 'undefined' || activeRole !== 'officer') ? 'bg-white text-govblue shadow-sm' : 'text-slate-600 hover:text-slate-900 bg-transparent' %>">
         <i class="fa-solid fa-user"></i> <%= t('roleConsumer') %>
-      </a>
-      <a href="/auth/register?role=officer<%= typeof returnTo !== 'undefined' && returnTo ? '&returnTo=' + encodeURIComponent(returnTo) : '' %>" id="tabRoleOfficer" role="button" class="flex-1 text-center py-2.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer no-underline <%= (typeof activeRole !== 'undefined' && activeRole === 'officer') ? 'bg-govblue text-white shadow-sm' : 'text-slate-600 hover:text-slate-900' %>">
+      </button>
+      <button type="button" onclick="switchRole('officer')" id="tabRoleOfficer" class="flex-1 text-center py-2.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer border-0 <%= (typeof activeRole !== 'undefined' && activeRole === 'officer') ? 'bg-govblue text-white shadow-sm' : 'text-slate-600 hover:text-slate-900 bg-transparent' %>">
         <i class="fa-solid fa-shield-halved text-amber-400"></i> <%= t('roleOfficer') %>
-      </a>
+      </button>
     </div>
 
     <div class="bg-white py-8 px-6 shadow-sm rounded-xl border border-slate-200">
@@ -116,6 +116,19 @@
         <%= t('haveAccount') %>
         <a id="linkSignIn" href="/auth/login<%= (typeof activeRole !== 'undefined' && activeRole === 'officer' ? '?role=officer' : '') + (typeof returnTo !== 'undefined' && returnTo ? ((typeof activeRole !== 'undefined' && activeRole === 'officer') ? '&returnTo=' : '?returnTo=') + encodeURIComponent(returnTo) : '') %>" class="text-govblue-light font-bold hover:underline"><%= t('signInHere') %></a>
       </div>
+
+      <!-- Quick Demo Access Links -->
+      <div class="mt-4 pt-3 border-t border-slate-100 text-center">
+        <span class="text-[11px] text-slate-400 block mb-2">Need to test immediately?</span>
+        <div class="flex items-center justify-center gap-2">
+          <a href="/auth/demo/consumer" class="btn btn-outline-secondary btn-sm text-[11px] py-1 px-2.5 rounded-lg flex items-center gap-1 font-medium">
+            <i class="fa-solid fa-user text-slate-500"></i> Demo Consumer
+          </a>
+          <a href="/auth/demo/officer" class="btn btn-outline-warning btn-sm text-[11px] py-1 px-2.5 rounded-lg flex items-center gap-1 font-bold text-amber-700 border-amber-400 hover:bg-amber-50">
+            <i class="fa-solid fa-shield-halved text-amber-600"></i> Demo Officer
+          </a>
+        </div>
+      </div>
     </div>
 
   </div>
@@ -129,6 +142,7 @@
     const tabOfficer = document.getElementById("tabRoleOfficer");
     const btnSubmit = document.getElementById("btnSubmitRegister");
     const badgeInput = document.getElementById("inputBadgeId");
+    const deptInput = document.getElementById("inputDepartment");
     const headerTitle = document.getElementById("regHeaderTitle");
     const headerSub = document.getElementById("regHeaderSub");
     const linkSignIn = document.getElementById("linkSignIn");
@@ -139,16 +153,17 @@
       if (officerFields) officerFields.classList.remove("hidden");
       if (tabUser) {
         tabUser.classList.remove("bg-white", "text-govblue", "shadow-sm");
-        tabUser.classList.add("text-slate-600", "hover:text-slate-900");
+        tabUser.classList.add("text-slate-600", "hover:text-slate-900", "bg-transparent");
       }
       if (tabOfficer) {
         tabOfficer.classList.add("bg-govblue", "text-white", "shadow-sm");
-        tabOfficer.classList.remove("text-slate-600", "hover:text-slate-900");
+        tabOfficer.classList.remove("text-slate-600", "hover:text-slate-900", "bg-transparent");
       }
       if (btnSubmit) btnSubmit.innerHTML = '<i class="fa-solid fa-shield-halved text-amber-400 me-1"></i> Register Official Enforcement Officer';
       if (headerTitle) headerTitle.innerText = "Enforcement Officer Registration";
       if (headerSub) headerSub.innerText = "Official Legal Metrology regulatory credentials for inspectors and enforcement authorities";
       if (badgeInput && !badgeInput.value) badgeInput.value = 'DL-LM-' + Math.floor(1000 + Math.random() * 9000);
+      if (deptInput && !deptInput.value) deptInput.value = 'Legal Metrology Enforcement Wing, Directorate of Legal Metrology';
       if (linkSignIn) linkSignIn.href = '/auth/login?role=officer';
       try {
         const url = new URL(window.location);
@@ -158,15 +173,14 @@
     } else {
       if (officerFields) officerFields.classList.add("hidden");
       if (badgeInput) badgeInput.value = "";
-      const deptInput = document.getElementById("inputDepartment");
       if (deptInput) deptInput.value = "";
       if (tabOfficer) {
         tabOfficer.classList.remove("bg-govblue", "text-white", "shadow-sm");
-        tabOfficer.classList.add("text-slate-600", "hover:text-slate-900");
+        tabOfficer.classList.add("text-slate-600", "hover:text-slate-900", "bg-transparent");
       }
       if (tabUser) {
         tabUser.classList.add("bg-white", "text-govblue", "shadow-sm");
-        tabUser.classList.remove("text-slate-600", "hover:text-slate-900");
+        tabUser.classList.remove("text-slate-600", "hover:text-slate-900", "bg-transparent");
       }
       if (btnSubmit) btnSubmit.innerHTML = '<i class="fa-solid fa-check me-1"></i> <%= t("btnRegister") %>';
       if (headerTitle) headerTitle.innerText = "<%= t('createAccountTitle') %>";
@@ -180,44 +194,26 @@
     }
   }
 
-  document.addEventListener("DOMContentLoaded", function () {
-    const tabUser = document.getElementById("tabRoleUser");
-    const tabOfficer = document.getElementById("tabRoleOfficer");
-
-    if (tabUser) {
-      tabUser.addEventListener("click", function (e) {
+  // Form password confirmation check
+  const regForm = document.getElementById("registerForm");
+  if (regForm) {
+    regForm.addEventListener("submit", function (e) {
+      const pwd = document.querySelector('input[name="password"]').value;
+      const confirmPwd = document.querySelector('input[name="confirmPassword"]').value;
+      if (pwd !== confirmPwd) {
         e.preventDefault();
-        switchRole("user");
-      });
-    }
-
-    if (tabOfficer) {
-      tabOfficer.addEventListener("click", function (e) {
+        alert("Passwords do not match. Please verify both password fields.");
+        document.querySelector('input[name="confirmPassword"]').focus();
+        return;
+      }
+      if (pwd.length < 6) {
         e.preventDefault();
-        switchRole("officer");
-      });
-    }
-
-    const regForm = document.getElementById("registerForm");
-    if (regForm) {
-      regForm.addEventListener("submit", function (e) {
-        const pwd = document.querySelector('input[name="password"]').value;
-        const confirmPwd = document.querySelector('input[name="confirmPassword"]').value;
-        if (pwd !== confirmPwd) {
-          e.preventDefault();
-          alert("Passwords do not match. Please verify both password fields.");
-          document.querySelector('input[name="confirmPassword"]').focus();
-          return;
-        }
-        if (pwd.length < 6) {
-          e.preventDefault();
-          alert("Password must be at least 6 characters long.");
-          document.querySelector('input[name="password"]').focus();
-          return;
-        }
-      });
-    }
-  });
+        alert("Password must be at least 6 characters long.");
+        document.querySelector('input[name="password"]').focus();
+        return;
+      }
+    });
+  }
 </script>
 
 <%- include('../partials/footer') %>

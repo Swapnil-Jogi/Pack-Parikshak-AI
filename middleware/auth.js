@@ -48,6 +48,15 @@ function forwardAuthenticated(req, res, next) {
   if (!req.isAuthenticated()) {
     return next();
   }
+
+  // If a logged-in user specifically requested switching to the other role (e.g., from consumer to officer)
+  const targetRole = req.query.role;
+  if (targetRole && targetRole !== req.user.role) {
+    return req.logout((err) => {
+      return next();
+    });
+  }
+
   if (req.user.role === "officer") {
     return res.redirect("/officer/dashboard");
   }

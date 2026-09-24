@@ -63,13 +63,7 @@ class OcrService {
               maxBuffer: 10 * 1024 * 1024,
               timeout: 60000,
               env: {
-                ...process.env,
-                OMP_NUM_THREADS: "1",
-                OPENBLAS_NUM_THREADS: "1",
-                MKL_NUM_THREADS: "1",
-                VECLIB_MAXIMUM_THREADS: "1",
-                NUMEXPR_NUM_THREADS: "1",
-                ONNXRUNTIME_INTR_OP_NUM_THREADS: "1"
+                ...process.env
               }
             },
             (error, stdout, stderr) => {

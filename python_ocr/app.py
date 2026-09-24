@@ -2,26 +2,6 @@ import os
 import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-# Restrict multi-threading thread pools to 1 to prevent memory multiplication on cloud containers (e.g. Render 512MB RAM)
-os.environ["OMP_NUM_THREADS"] = "1"
-os.environ["OPENBLAS_NUM_THREADS"] = "1"
-os.environ["MKL_NUM_THREADS"] = "1"
-os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
-os.environ["NUMEXPR_NUM_THREADS"] = "1"
-os.environ["ONNXRUNTIME_INTR_OP_NUM_THREADS"] = "1"
-
-# Monkey-patch ONNX Runtime SessionOptions to enforce single-threaded sequential execution
-import onnxruntime as ort
-_orig_SessionOptions = ort.SessionOptions
-def low_mem_session_options(*args, **kwargs):
-    opt = _orig_SessionOptions(*args, **kwargs)
-    opt.intra_op_num_threads = 1
-    opt.inter_op_num_threads = 1
-    opt.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
-    opt.enable_cpu_mem_arena = False
-    return opt
-ort.SessionOptions = low_mem_session_options
-
 import json
 import base64
 import io
@@ -204,8 +184,8 @@ if __name__ == '__main__':
     try:
         from waitress import serve
         print(f"[Python-OCR] Starting Production WSGI Server (Waitress) on {host}:{port}...", flush=True)
-        serve(app, host=host, port=port, threads=1)
+        serve(app, host=host, port=port, threads=2)
     except ImportError:
         print(f"[Python-OCR] Starting Flask OCR Microservice on {host}:{port}...", flush=True)
-        app.run(host=host, port=port, debug=False, threaded=False)
+        app.run(host=host, port=port, debug=False, threaded=True)
 

@@ -5,19 +5,13 @@
 
 FROM node:20-bookworm-slim
 
-# Set core production environment variables with strict thread bounds (Render 512MB RAM)
+# Set core production environment variables
 ENV NODE_ENV=production \
     PORT=8080 \
     PYTHON_OCR_PORT=5000 \
     PYTHON_OCR_HOST=127.0.0.1 \
     PYTHONUNBUFFERED=1 \
-    DEBIAN_FRONTEND=noninteractive \
-    OMP_NUM_THREADS=1 \
-    OPENBLAS_NUM_THREADS=1 \
-    MKL_NUM_THREADS=1 \
-    VECLIB_MAXIMUM_THREADS=1 \
-    NUMEXPR_NUM_THREADS=1 \
-    ONNXRUNTIME_INTR_OP_NUM_THREADS=1
+    DEBIAN_FRONTEND=noninteractive
 
 # Install Python 3, virtual environment, and system libraries required by OpenCV & ONNX Runtime
 RUN apt-get update && apt-get install -y --no-install-recommends \

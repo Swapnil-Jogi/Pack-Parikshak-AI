@@ -1,25 +1,6 @@
 import sys
 import os
 
-# Enforce single-thread execution for low-memory container environments
-os.environ["OMP_NUM_THREADS"] = "1"
-os.environ["OPENBLAS_NUM_THREADS"] = "1"
-os.environ["MKL_NUM_THREADS"] = "1"
-os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
-os.environ["NUMEXPR_NUM_THREADS"] = "1"
-os.environ["ONNXRUNTIME_INTR_OP_NUM_THREADS"] = "1"
-
-import onnxruntime as ort
-_orig_SessionOptions = ort.SessionOptions
-def low_mem_session_options(*args, **kwargs):
-    opt = _orig_SessionOptions(*args, **kwargs)
-    opt.intra_op_num_threads = 1
-    opt.inter_op_num_threads = 1
-    opt.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
-    opt.enable_cpu_mem_arena = False
-    return opt
-ort.SessionOptions = low_mem_session_options
-
 import json
 import gc
 import numpy as np

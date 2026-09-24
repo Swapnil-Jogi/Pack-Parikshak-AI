@@ -1,20 +1,18 @@
 import cv2
 import numpy as np
+import gc
 
 class ImagePreprocessor:
     """
     Advanced Image Enhancement Pipeline for Packaging OCR.
-    Handles packaging challenges:
-    - Stylized, condensed, or dot-matrix fonts
-    - Low-resolution fine print (1mm-2mm declaration font heights)
-    - Low-contrast colored backgrounds (e.g., colored foil, pouches)
-    - Glare and uneven illumination
+    Optimized for high-accuracy text detection under cloud memory constraints (512MB RAM).
     """
 
     @staticmethod
     def preprocess_for_ocr(img_np):
         """
-        Enhances the input image for maximum text detection and recognition accuracy.
+        Enhances the input image for maximum text detection and recognition accuracy
+        while strictly controlling peak memory consumption.
         Returns:
             enhanced_np (numpy.ndarray): Preprocessed RGB image ready for OCR engine
             scale (float): Scale factor applied during preprocessing (used to remap coordinates)
@@ -28,43 +26,44 @@ class ImagePreprocessor:
             bgr = cv2.cvtColor(img_np, cv2.COLOR_RGB2BGR)
 
         h, w = bgr.shape[:2]
-
-        # 1. Intelligent Scale for Packaging OCR
-        # Scale down excessively large images (> 1920px) to prevent memory and CPU timeouts on cloud tiers,
-        # or upscale small images (< 1200px) so fine-print declarations (Rule 7) are crisp for OCR CNN.
-        scale = 1.0
-        target_min_dim = 1200.0
         max_dim = float(max(h, w))
-        if max_dim > 1920.0:
-            scale = 1920.0 / max_dim
+        scale = 1.0
+
+        # Memory safeguard:
+        # Scale down large images (> 1200px) to prevent OOM on 512MB containers.
+        # RapidOCR's internal DBNet works optimally at 960px.
+        # Only upscale very tiny images (< 600px) to conserve RAM.
+        if max_dim > 1200.0:
+            scale = 1200.0 / max_dim
             new_w = int(round(w * scale))
             new_h = int(round(h * scale))
             bgr = cv2.resize(bgr, (new_w, new_h), interpolation=cv2.INTER_AREA)
-        elif max_dim < target_min_dim:
-            scale = target_min_dim / max_dim
+        elif max_dim < 600.0:
+            scale = 600.0 / max_dim
             new_w = int(round(w * scale))
             new_h = int(round(h * scale))
-            bgr = cv2.resize(bgr, (new_w, new_h), interpolation=cv2.INTER_CUBIC)
+            bgr = cv2.resize(bgr, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
 
         # 2. Local Luminance Contrast Enhancement via CLAHE in LAB Color Space
-        # This brings out faint, colored, or low-contrast fonts from background packaging
+        # Brings out faint, colored, or low-contrast packaging declarations
         lab = cv2.cvtColor(bgr, cv2.COLOR_BGR2LAB)
-        l, a, b = cv2.split(lab)
-
-        # Contrast Limited Adaptive Histogram Equalization on L-channel
-        clahe = cv2.createCLAHE(clipLimit=2.4, tileGridSize=(8, 8))
+        l, a, b_chan = cv2.split(lab)
+        clahe = cv2.createCLAHE(clipLimit=2.2, tileGridSize=(8, 8))
         l_clahe = clahe.apply(l)
 
-        enhanced_lab = cv2.merge((l_clahe, a, b))
+        enhanced_lab = cv2.merge((l_clahe, a, b_chan))
         enhanced_bgr = cv2.cvtColor(enhanced_lab, cv2.COLOR_LAB2BGR)
+        del lab, l, a, b_chan, l_clahe, enhanced_lab
 
         # 3. Gentle Unsharp Masking for Sharp Character Boundaries
-        # Enhances thin strokes in stylized fonts, dot-matrix dots, and condensed letters
-        gaussian = cv2.GaussianBlur(enhanced_bgr, (0, 0), sigmaX=2.0)
-        sharpened_bgr = cv2.addWeighted(enhanced_bgr, 1.35, gaussian, -0.35, 0)
+        gaussian = cv2.GaussianBlur(enhanced_bgr, (0, 0), sigmaX=1.8)
+        sharpened_bgr = cv2.addWeighted(enhanced_bgr, 1.3, gaussian, -0.3, 0)
+        del enhanced_bgr, gaussian
 
         # Convert back to RGB for RapidOCR / PaddleOCR
         final_rgb = cv2.cvtColor(sharpened_bgr, cv2.COLOR_BGR2RGB)
+        del sharpened_bgr
 
         return final_rgb, scale
+
 

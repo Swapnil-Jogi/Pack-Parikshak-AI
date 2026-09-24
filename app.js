@@ -387,7 +387,17 @@ async function startPythonOcrService() {
   const scriptPath = path.join(__dirname, "python_ocr", "app.py");
 
   pythonProcess = spawn(pythonCmd, [scriptPath], {
-    env: { ...process.env, PORT: pythonOcrPort, PYTHON_OCR_PORT: pythonOcrPort }
+    env: {
+      ...process.env,
+      PORT: pythonOcrPort,
+      PYTHON_OCR_PORT: pythonOcrPort,
+      OMP_NUM_THREADS: "1",
+      OPENBLAS_NUM_THREADS: "1",
+      MKL_NUM_THREADS: "1",
+      VECLIB_MAXIMUM_THREADS: "1",
+      NUMEXPR_NUM_THREADS: "1",
+      ONNXRUNTIME_INTR_OP_NUM_THREADS: "1"
+    }
   });
 
   pythonProcess.stdout.on("data", (data) => {

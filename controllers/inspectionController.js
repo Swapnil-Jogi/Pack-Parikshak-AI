@@ -38,8 +38,8 @@ exports.postUploadScan = async (req, res) => {
       return res.redirect("/inspections/new");
     }
 
-    console.log(`[Inspection] Processing image through OCR Engine: ${localPath}`);
-    const ocrResult = await ocrService.processImage(localPath);
+    console.log(`[Inspection] Processing image through OCR Engine: ${localPath} (sampleType: ${sampleType || "custom"})`);
+    const ocrResult = await ocrService.processImage(localPath, sampleType);
 
     // Run Statutory Rule Verification Engine
     const evaluation = RuleEngine.evaluate(ocrResult.structured, ocrResult.raw_text);

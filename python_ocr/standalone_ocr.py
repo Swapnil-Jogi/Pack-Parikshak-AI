@@ -1,6 +1,27 @@
 import sys
 import os
+
+# Enforce single-thread execution for low-memory container environments
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
+os.environ["NUMEXPR_NUM_THREADS"] = "1"
+os.environ["ONNXRUNTIME_INTR_OP_NUM_THREADS"] = "1"
+
+import onnxruntime as ort
+_orig_SessionOptions = ort.SessionOptions
+def low_mem_session_options(*args, **kwargs):
+    opt = _orig_SessionOptions(*args, **kwargs)
+    opt.intra_op_num_threads = 1
+    opt.inter_op_num_threads = 1
+    opt.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
+    opt.enable_cpu_mem_arena = False
+    return opt
+ort.SessionOptions = low_mem_session_options
+
 import json
+import gc
 import numpy as np
 from PIL import Image
 from rapidocr_onnxruntime import RapidOCR
@@ -19,9 +40,12 @@ def run_standalone(image_path):
         from image_preprocessor import ImagePreprocessor
 
         ocr = RapidOCR(text_score=0.35, use_angle_cls=True)
-        if hasattr(ocr, 'text_detector') and hasattr(ocr.text_detector, 'postprocess_op'):
-            ocr.text_detector.postprocess_op.unclip_ratio = 1.9
-            ocr.text_detector.postprocess_op.box_thresh = 0.45
+        if hasattr(ocr, 'text_detector'):
+            ocr.text_detector.limit_side_len = 960
+            ocr.text_detector.limit_type = 'max'
+            if hasattr(ocr.text_detector, 'postprocess_op'):
+                ocr.text_detector.postprocess_op.unclip_ratio = 1.9
+                ocr.text_detector.postprocess_op.box_thresh = 0.45
         parser = PackagingLayoutParser()
 
         enhanced_rgb, scale = ImagePreprocessor.preprocess_for_ocr(img_np)

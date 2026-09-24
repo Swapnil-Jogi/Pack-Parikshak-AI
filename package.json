@@ -7,7 +7,7 @@
   "type": "commonjs",
   "main": "app.js",
   "scripts": {
-    "start": "node app.js",
+    "start": "node --max-old-space-size=128 app.js",
     "seed": "node seed.js",
     "test": "node test/test_all.js"
   },

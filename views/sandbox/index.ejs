@@ -306,6 +306,15 @@
         }
       });
     }
+
+    window.addEventListener("pageshow", function () {
+      const overlay = document.getElementById("ocrLoadingOverlay");
+      if (overlay) overlay.classList.add("hidden");
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fa-solid fa-magnifying-glass text-amber-400"></i> <span>' + (submitBtn.getAttribute("data-original-text") || "<%= t('uploadBtn') %>") + '</span>';
+      }
+    });
   });
 </script>
 

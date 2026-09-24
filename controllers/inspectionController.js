@@ -30,9 +30,7 @@ exports.postUploadScan = async (req, res) => {
       imageUrl = "/samples/violating_snack_pack.png";
     } else if (req.file) {
       localPath = req.file.path;
-      // Upload to Cloudinary or use local URL
-      const storageResult = await uploadToCloudinaryOrLocal(req.file.path, req.file.filename);
-      imageUrl = storageResult.url;
+      imageUrl = `/uploads/${req.file.filename}`;
     } else {
       req.session.errorMessage = "Please upload an image file or choose a sample packaging label.";
       return res.redirect("/inspections/new");
@@ -71,6 +69,16 @@ exports.postUploadScan = async (req, res) => {
 
     await inspection.save();
     console.log(`[Inspection] Saved new inspection record: ${inspection.inspectionNumber} (${inspection.complianceStatus})`);
+
+    // Non-blocking Cloudinary sync if configured
+    if (req.file) {
+      uploadToCloudinaryOrLocal(req.file.path, req.file.filename).then((cRes) => {
+        if (cRes && cRes.isCloud) {
+          inspection.imageUrl = cRes.url;
+          inspection.save().catch(() => {});
+        }
+      }).catch(() => {});
+    }
 
     res.redirect(`/inspections/${inspection._id}/sandbox`);
   } catch (error) {

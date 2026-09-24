@@ -14,6 +14,8 @@ from rapidocr_onnxruntime import RapidOCR
 from layout_parser import PackagingLayoutParser
 from image_preprocessor import ImagePreprocessor
 
+import time
+
 app = Flask(__name__)
 CORS(app)
 
@@ -25,19 +27,17 @@ try:
         text_score=0.35,
         use_angle_cls=False
     )
-    # Tune detector parameters for packaging labels & cap max side length to 480px
+    # Tune detector parameters for packaging labels & cap max side length to 420px
     if hasattr(ocr_engine, 'text_detector'):
         if hasattr(ocr_engine.text_detector, 'preprocess_op') and len(ocr_engine.text_detector.preprocess_op) > 0:
-            ocr_engine.text_detector.preprocess_op[0].limit_side_len = 480
+            ocr_engine.text_detector.preprocess_op[0].limit_side_len = 420
             ocr_engine.text_detector.preprocess_op[0].limit_type = 'max'
         if hasattr(ocr_engine.text_detector, 'postprocess_op'):
             ocr_engine.text_detector.postprocess_op.unclip_ratio = 1.9
             ocr_engine.text_detector.postprocess_op.box_thresh = 0.45
             ocr_engine.text_detector.postprocess_op.max_candidates = 500
-    if hasattr(ocr_engine, 'text_recognizer'):
-        ocr_engine.text_recognizer.rec_batch_num = 1
     layout_parser = PackagingLayoutParser()
-    print("[Python-OCR] Ultra-low-memory PaddleOCR Engine initialized and ready (480px profile).", flush=True)
+    print("[Python-OCR] Ultra-low-memory PaddleOCR Engine initialized and ready (420px profile).", flush=True)
 
     # Pre-warm detector and recognizer ONNX graphs with a tiny text image
     try:
@@ -71,34 +71,45 @@ def process_image(img_pil):
         del img_np
         print(f"[Python-OCR Process] Preprocessing complete: shape={enhanced_rgb.shape}, scale={scale:.3f}", flush=True)
 
-        # 2. Run OCR on enhanced image
-        print("[Python-OCR Process] Running OCR engine inference...", flush=True)
-        result, elapse = ocr_engine(enhanced_rgb)
-        del enhanced_rgb
-        box_count = len(result) if result else 0
-        print(f"[Python-OCR Process] OCR inference finished in {elapse:.2f}s with {box_count} text boxes", flush=True)
-        raw_boxes = []
+        # 2. Text Detection
+        t0 = time.time()
+        print("[Python-OCR Process] Running text detector...", flush=True)
+        dt_boxes, det_elapse = ocr_engine.text_detector(enhanced_rgb)
+        print(f"[Python-OCR Process] Detector found {len(dt_boxes) if dt_boxes else 0} boxes in {det_elapse:.2f}s", flush=True)
 
-        if result:
-            for item in result:
-                # item[0]: [[x1, y1], [x2, y2], [x3, y3], [x4, y4]]
-                # Rescale coordinates back to original image dimensions for accurate canvas rendering
+        raw_boxes = []
+        if dt_boxes is not None and len(dt_boxes) > 0:
+            dt_boxes = ocr_engine.sorted_boxes(dt_boxes)
+            if len(dt_boxes) > 35:
+                dt_boxes = dt_boxes[:35]
+            img_crop_list = ocr_engine.get_crop_img_list(enhanced_rgb, dt_boxes)
+            del enhanced_rgb
+
+            print(f"[Python-OCR Process] Running recognizer on {len(img_crop_list)} crops...", flush=True)
+            rec_res, rec_elapse = ocr_engine.text_recognizer(img_crop_list)
+            print(f"[Python-OCR Process] Recognizer finished in {rec_elapse:.2f}s", flush=True)
+
+            filter_boxes, filter_rec_res = ocr_engine.filter_boxes_rec_by_score(dt_boxes, rec_res)
+            for dt, rec in zip(filter_boxes, filter_rec_res):
                 box_coords = [
                     [round(float(p[0]) / scale, 2), round(float(p[1]) / scale, 2)]
-                    for p in item[0]
+                    for p in dt
                 ]
-                text = str(item[1]).strip()
-                conf = float(item[2])
-                raw_boxes.append({
-                    'box': box_coords,
-                    'text': text,
-                    'confidence': conf
-                })
+                text = str(rec[0]).strip()
+                conf = float(rec[1])
+                if text:
+                    raw_boxes.append({
+                        'box': box_coords,
+                        'text': text,
+                        'confidence': conf
+                    })
+        else:
+            del enhanced_rgb
 
         # 3. Spatial & semantic layout parsing using font-tolerant heuristics
         print(f"[Python-OCR Process] Running layout parser on {len(raw_boxes)} boxes...", flush=True)
         structured, full_text = layout_parser.parse(raw_boxes, image_width=orig_w, image_height=orig_h)
-        print("[Python-OCR Process] Structured parsing complete!", flush=True)
+        print(f"[Python-OCR Process] Structured parsing complete in {time.time() - t0:.2f}s!", flush=True)
 
         return {
             'success': True,

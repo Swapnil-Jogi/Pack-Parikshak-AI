@@ -20,14 +20,14 @@
       </div>
     </div>
 
-    <div class="flex items-center gap-2">
-      <a href="/dashboard" class="btn btn-sm btn-outline-light text-xs font-semibold py-2 px-3 shadow-sm flex items-center gap-1.5" title="View uploaded image scans dashboard">
+    <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full md:w-auto">
+      <a href="/dashboard" class="btn btn-sm btn-outline-light text-xs font-semibold py-2 px-3 shadow-sm flex items-center justify-center gap-1.5 flex-1 sm:flex-initial" title="View uploaded image scans dashboard">
         <i class="fa-solid fa-images text-amber-300"></i> My Uploaded Scans
       </a>
-      <a href="/reports/export/csv" class="btn btn-sm btn-outline-light text-xs font-semibold py-2 px-3 shadow-sm flex items-center gap-1.5">
+      <a href="/reports/export/csv" class="btn btn-sm btn-outline-light text-xs font-semibold py-2 px-3 shadow-sm flex items-center justify-center gap-1.5 flex-1 sm:flex-initial">
         <i class="fa-solid fa-file-csv text-emerald-400"></i> <%= t('exportComplianceCsvBtn') %>
       </a>
-      <a href="/inspections/new" class="btn btn-sm btn-warning text-xs font-bold py-2 px-3 shadow-sm flex items-center gap-1.5">
+      <a href="/inspections/new" class="btn btn-sm btn-warning text-xs font-bold py-2 px-3 shadow-sm flex items-center justify-center gap-1.5 flex-1 sm:flex-initial">
         <i class="fa-solid fa-camera"></i> <%= t('inspectNewPackageBtn') %>
       </a>
     </div>
@@ -156,9 +156,9 @@
       </div>
 
       <!-- Filters -->
-      <div class="flex items-center gap-2 w-full sm:w-auto">
-        <input type="text" id="queueSearchInput" placeholder="<%= t('searchProductPlaceholder') %>" class="form-control form-control-sm text-xs rounded-lg py-1.5">
-        <select id="queueStatusFilter" class="form-select form-select-sm text-xs rounded-lg py-1.5">
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+        <input type="text" id="queueSearchInput" placeholder="<%= t('searchProductPlaceholder') %>" class="form-control form-control-sm text-xs rounded-lg py-1.5 w-full sm:w-60">
+        <select id="queueStatusFilter" class="form-select form-select-sm text-xs rounded-lg py-1.5 w-full sm:w-auto">
           <option value="ALL">📦 All Total Scanned Products (<%= stats.totalInspections %>)</option>
           <option value="MY_UPLOADS">👤 My Uploads Only</option>
           <option value="COMPLAINTS">🚨 Consumer Complaints (<%= stats.complaintCount || 0 %>)</option>
@@ -169,123 +169,215 @@
       </div>
     </div>
 
-    <div class="overflow-x-auto">
-      <table class="table table-hover align-middle mb-0 text-xs">
-        <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] font-bold border-b border-slate-200">
-          <tr>
-            <th class="ps-4 py-3"><%= t('colInspectionId') %></th>
-            <th class="py-3"><%= t('colCommodityBrand') %></th>
-            <th class="py-3"><%= t('colRegion') %></th>
-            <th class="py-3"><%= t('colInfractions') %></th>
-            <th class="py-3"><%= t('colStatus') %></th>
-            <th class="py-3"><%= t('colPenaltyExposure') %></th>
-            <th class="pe-4 py-3 text-end"><%= t('colEnforcementAction') %></th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-100">
-          <% queue.forEach(item => { %>
-            <tr class="queue-row" data-status="<%= item.complianceStatus %>" data-has-complaint="<%= (item.complaint && item.complaint.isFiled) ? 'true' : 'false' %>" data-is-my-upload="<%= (item.user && user && item.user.toString() === user._id.toString()) ? 'true' : 'false' %>">
-              <td class="ps-4 font-mono font-bold text-slate-700">
-                <a href="/inspections/<%= item._id %>/sandbox" class="hover:text-govblue hover:underline">
+    <% if (queue.length === 0) { %>
+      <div class="py-12 px-4 text-center text-slate-500">
+        <i class="fa-solid fa-clipboard-check text-4xl text-emerald-500 mb-2 block"></i>
+        <div class="font-bold text-slate-800 text-sm">No Pending Inspections</div>
+        <p class="text-xs text-slate-500 mt-1 max-w-md mx-auto">All packaged commodities in your jurisdiction are compliant or resolved.</p>
+        <a href="/inspections/new" class="btn btn-warning btn-sm text-xs font-bold py-1.5 px-3 mt-3 inline-flex items-center gap-1.5 shadow-sm">
+          <i class="fa-solid fa-camera"></i> Inspect New Package
+        </a>
+      </div>
+    <% } else { %>
+
+      <!-- Mobile Touch-Friendly Cards View (visible on < 768px) -->
+      <div class="block md:hidden divide-y divide-slate-100">
+        <% queue.forEach(item => { %>
+          <div class="queue-row p-4 hover:bg-slate-50/70 transition mobile-card" data-status="<%= item.complianceStatus %>" data-has-complaint="<%= (item.complaint && item.complaint.isFiled) ? 'true' : 'false' %>" data-is-my-upload="<%= (item.user && user && item.user.toString() === user._id.toString()) ? 'true' : 'false' %>">
+            <!-- Header: ID, Date, Status -->
+            <div class="flex items-start justify-between gap-2 mb-2">
+              <div>
+                <a href="/inspections/<%= item._id %>/sandbox" class="font-mono text-xs font-bold text-govblue hover:underline">
                   <%= item.inspectionNumber %>
                 </a>
-                <% if (item.complaint && item.complaint.isFiled) { %>
-                  <div class="mt-1 flex flex-col gap-0.5">
+                <div class="text-[10px] text-slate-400 mt-0.5 flex items-center gap-1.5">
+                  <span><i class="fa-solid fa-location-dot text-slate-400"></i> <%= item.location ? item.location.state : 'Delhi' %></span>
+                  <span>&bull;</span>
+                  <span><%= new Date(item.createdAt).toLocaleDateString('en-IN') %></span>
+                </div>
+              </div>
+              <div class="flex items-center gap-1.5 flex-shrink-0">
+                <% if (item.complianceStatus === 'COMPLIANT') { %>
+                  <span class="badge bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5"><%= t('statusCompliant') %></span>
+                <% } else if (item.complianceStatus === 'WARNING') { %>
+                  <span class="badge bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5"><%= t('statusWarning') %></span>
+                <% } else { %>
+                  <span class="badge bg-red-100 text-red-800 text-[10px] px-2 py-0.5"><%= t('statusNonCompliant') %></span>
+                <% } %>
+              </div>
+            </div>
+
+            <!-- Product Details Row -->
+            <div class="flex items-center gap-3 mb-3">
+              <a href="/inspections/<%= item._id %>/sandbox" class="flex-shrink-0">
+                <img src="<%= item.imageUrl %>" alt="<%= item.productName %>" class="w-14 h-14 object-cover rounded-lg border border-slate-200 shadow-2xs bg-slate-100" onerror="this.src='/images/placeholder-package.svg'; this.onerror=null;">
+              </a>
+              <div class="flex-1 min-w-0">
+                <a href="/inspections/<%= item._id %>/sandbox" class="font-bold text-slate-900 hover:text-govblue hover:underline text-xs block truncate">
+                  <%= item.productName %>
+                </a>
+                <div class="text-[11px] text-slate-500 mt-0.5 truncate">
+                  <%= item.brand %> &bull; <%= item.category %>
+                </div>
+
+                <div class="flex items-center gap-2 mt-1.5 flex-wrap">
+                  <% if (item.violationsCount > 0) { %>
+                    <span class="badge bg-red-100 text-red-800 border border-red-200 text-[10px] font-semibold">
+                      <%= item.violationsCount %> Violations
+                    </span>
+                  <% } else { %>
+                    <span class="text-slate-400 text-[10px]"><%= t('badgeNone') %></span>
+                  <% } %>
+
+                  <span class="text-[11px] font-bold text-red-600">
+                    ₹ <%= (item.section36Penalty ? item.section36Penalty.estimatedAmount : 25000).toLocaleString('en-IN') %> Exp.
+                  </span>
+
+                  <!-- Officer view: statutory grievance number -->
+                  <% if (item.complaint && item.complaint.isFiled) { %>
                     <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-purple-100 text-purple-800 border border-purple-200" title="Consumer Statutory Grievance Lodged">
                       <i class="fa-solid fa-bullhorn text-purple-600"></i> <%= item.complaint.complaintNumber %>
                     </span>
-                    <% if (item.complaint.status === 'CONFIRMED' || item.complaint.viewedByOfficer) { %>
-                      <span class="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1 py-0.2 rounded border border-emerald-200">
-                        <i class="fa-solid fa-circle-check text-emerald-600"></i> Confirmed
-                      </span>
-                    <% } %>
-                  </div>
-                <% } %>
-              </td>
-              <td>
-                <div class="flex items-center gap-2.5">
-                  <a href="/inspections/<%= item._id %>/sandbox" class="relative group block flex-shrink-0" title="Click to view packaging in sandbox">
-                    <img src="<%= item.imageUrl %>" alt="<%= item.productName %>" class="w-10 h-10 object-cover rounded-lg border border-slate-200 shadow-xs group-hover:scale-105 transition bg-slate-100" onerror="this.src='/images/placeholder-package.svg'; this.onerror=null;">
-                  </a>
-                  <div>
-                    <a href="/inspections/<%= item._id %>/sandbox" class="font-bold text-slate-900 hover:text-govblue hover:underline block leading-tight">
-                      <%= item.productName %>
-                    </a>
-                    <div class="text-[10px] text-slate-500 mt-0.5"><%= item.brand %> | <%= item.category %></div>
-                  </div>
+                  <% } %>
                 </div>
-              </td>
-              <td class="text-slate-600">
-                <span class="inline-flex items-center gap-1">
-                  <i class="fa-solid fa-location-dot text-[10px] text-slate-400"></i> <%= item.location ? item.location.state : 'Delhi' %>
-                </span>
-              </td>
-              <td>
-                <% if (item.violationsCount > 0) { %>
-                  <span class="badge bg-red-100 text-red-800 border border-red-200 font-semibold">
-                    <%= item.violationsCount %> <%= t('badgeViolations') %>
-                  </span>
-                <% } else { %>
-                  <span class="text-slate-400"><%= t('badgeNone') %></span>
-                <% } %>
-              </td>
-              <td>
-                <% if (item.complianceStatus === 'COMPLIANT') { %>
-                  <span class="badge bg-emerald-100 text-emerald-800"><%= t('statusCompliant') %></span>
-                <% } else if (item.complianceStatus === 'WARNING') { %>
-                  <span class="badge bg-amber-100 text-amber-800"><%= t('statusWarning') %></span>
-                <% } else { %>
-                  <span class="badge bg-red-100 text-red-800"><%= t('statusNonCompliant') %></span>
-                <% } %>
-              </td>
-              <td class="font-bold text-red-600">
-                ₹ <%= (item.section36Penalty ? item.section36Penalty.estimatedAmount : 25000).toLocaleString('en-IN') %>
-              </td>
-              <td class="pe-4 text-end space-x-1 whitespace-nowrap">
-                <a href="/inspections/<%= item._id %>/sandbox" class="btn btn-outline-primary btn-sm text-[11px] py-1 px-2" title="<%= t('btnSandbox') %>">
-                  <i class="fa-solid fa-microchip"></i>
-                </a>
-                <button type="button" class="btn btn-warning btn-sm text-[11px] font-bold py-1 px-2.5 shadow-xs btn-open-notice-modal"
-                  data-id="<%= item._id %>"
-                  data-type="WARNING"
-                  data-product="<%= item.productName %>"
-                  data-manufacturer="<%= item.extractedData.manufacturer || '' %>"
-                  data-violations="<%= (item.violationsList || []).join(';') %>"
-                  data-penalty="<%= item.section36Penalty ? item.section36Penalty.estimatedAmount : 25000 %>"
-                  title="Issue Pre-Enforcement Warning Notice with Rectification Deadline">
-                  <i class="fa-solid fa-triangle-exclamation me-1"></i> Warning Notice
-                </button>
-                <button type="button" class="btn btn-danger btn-sm text-[11px] font-bold py-1 px-2 shadow-xs btn-open-notice-modal"
-                  data-id="<%= item._id %>"
-                  data-type="SHOW_CAUSE"
-                  data-product="<%= item.productName %>"
-                  data-manufacturer="<%= item.extractedData.manufacturer || '' %>"
-                  data-violations="<%= (item.violationsList || []).join(';') %>"
-                  data-penalty="<%= item.section36Penalty ? item.section36Penalty.estimatedAmount : 25000 %>"
-                  title="Issue Formal Section 36 Show-Cause Notice">
-                  <i class="fa-solid fa-gavel me-0.5"></i> SCN
-                </button>
-                <a href="/reports/<%= item._id %>/pdf" class="btn btn-outline-danger btn-sm text-[11px] py-1 px-2" title="<%= t('btnDownloadPdf') %>">
-                  <i class="fa-solid fa-file-pdf"></i>
-                </a>
-              </td>
-            </tr>
-          <% }) %>
-          <% if (queue.length === 0) { %>
+              </div>
+            </div>
+
+            <!-- Card Enforcement Actions -->
+            <div class="pt-2.5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-1.5">
+              <a href="/inspections/<%= item._id %>/sandbox" class="btn btn-outline-primary btn-sm text-[11px] py-1 px-2.5 flex items-center gap-1">
+                <i class="fa-solid fa-microchip"></i> <%= t('btnSandbox') %>
+              </a>
+              <button type="button" class="btn btn-warning btn-sm text-[11px] font-bold py-1 px-2 shadow-xs btn-open-notice-modal flex items-center gap-1"
+                data-id="<%= item._id %>"
+                data-type="WARNING"
+                data-product="<%= item.productName %>"
+                data-manufacturer="<%= item.extractedData.manufacturer || '' %>"
+                data-violations="<%= (item.violationsList || []).join(';') %>"
+                data-penalty="<%= item.section36Penalty ? item.section36Penalty.estimatedAmount : 25000 %>"
+                title="Issue Pre-Enforcement Warning Notice with Rectification Deadline">
+                <i class="fa-solid fa-triangle-exclamation"></i> Warning Notice
+              </button>
+              <button type="button" class="btn btn-danger btn-sm text-[11px] font-bold py-1 px-2 shadow-xs btn-open-notice-modal flex items-center gap-1"
+                data-id="<%= item._id %>"
+                data-type="SHOW_CAUSE"
+                data-product="<%= item.productName %>"
+                data-manufacturer="<%= item.extractedData.manufacturer || '' %>"
+                data-violations="<%= (item.violationsList || []).join(';') %>"
+                data-penalty="<%= item.section36Penalty ? item.section36Penalty.estimatedAmount : 25000 %>"
+                title="Issue Formal Section 36 Show-Cause Notice">
+                <i class="fa-solid fa-gavel"></i> SCN
+              </button>
+              <a href="/reports/<%= item._id %>/pdf" class="btn btn-outline-danger btn-sm text-[11px] py-1 px-2 flex items-center gap-1" title="<%= t('btnDownloadPdf') %>">
+                <i class="fa-solid fa-file-pdf"></i> PDF
+              </a>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+
+      <!-- Desktop Table View (hidden on < 768px, visible on md+) -->
+      <div class="hidden md:block overflow-x-auto">
+        <table class="table table-hover align-middle mb-0 text-xs">
+          <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] font-bold border-b border-slate-200">
             <tr>
-              <td colspan="7" class="py-10 text-center text-slate-500">
-                <i class="fa-solid fa-clipboard-check text-4xl text-emerald-500 mb-2 block"></i>
-                <div class="font-bold text-slate-800 text-sm">No Pending Inspections</div>
-                <p class="text-xs text-slate-500 mt-1">All packaged commodities in your jurisdiction are compliant or resolved.</p>
-                <a href="/inspections/new" class="btn btn-warning btn-sm text-xs font-bold py-1.5 px-3 mt-3 inline-flex items-center gap-1.5 shadow-sm">
-                  <i class="fa-solid fa-camera"></i> Inspect New Package
-                </a>
-              </td>
+              <th class="ps-4 py-3"><%= t('colInspectionId') %></th>
+              <th class="py-3"><%= t('colCommodityBrand') %></th>
+              <th class="py-3"><%= t('colRegion') %></th>
+              <th class="py-3"><%= t('colInfractions') %></th>
+              <th class="py-3"><%= t('colStatus') %></th>
+              <th class="py-3"><%= t('colPenaltyExposure') %></th>
+              <th class="pe-4 py-3 text-end"><%= t('colEnforcementAction') %></th>
             </tr>
-          <% } %>
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            <% queue.forEach(item => { %>
+              <tr class="queue-row" data-status="<%= item.complianceStatus %>" data-has-complaint="<%= (item.complaint && item.complaint.isFiled) ? 'true' : 'false' %>" data-is-my-upload="<%= (item.user && user && item.user.toString() === user._id.toString()) ? 'true' : 'false' %>">
+                <td class="ps-4 font-mono font-bold text-slate-700">
+                  <a href="/inspections/<%= item._id %>/sandbox" class="hover:text-govblue hover:underline">
+                    <%= item.inspectionNumber %>
+                  </a>
+                  <% if (item.complaint && item.complaint.isFiled) { %>
+                    <div class="mt-1">
+                      <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-purple-100 text-purple-800 border border-purple-200" title="Consumer Statutory Grievance Lodged">
+                        <i class="fa-solid fa-bullhorn text-purple-600"></i> <%= item.complaint.complaintNumber %>
+                      </span>
+                    </div>
+                  <% } %>
+                </td>
+                <td>
+                  <div class="flex items-center gap-2.5">
+                    <a href="/inspections/<%= item._id %>/sandbox" class="relative group block flex-shrink-0" title="Click to view packaging in sandbox">
+                      <img src="<%= item.imageUrl %>" alt="<%= item.productName %>" class="w-10 h-10 object-cover rounded-lg border border-slate-200 shadow-xs group-hover:scale-105 transition bg-slate-100" onerror="this.src='/images/placeholder-package.svg'; this.onerror=null;">
+                    </a>
+                    <div>
+                      <a href="/inspections/<%= item._id %>/sandbox" class="font-bold text-slate-900 hover:text-govblue hover:underline block leading-tight">
+                        <%= item.productName %>
+                      </a>
+                      <div class="text-[10px] text-slate-500 mt-0.5"><%= item.brand %> | <%= item.category %></div>
+                    </div>
+                  </div>
+                </td>
+                <td class="text-slate-600">
+                  <span class="inline-flex items-center gap-1">
+                    <i class="fa-solid fa-location-dot text-[10px] text-slate-400"></i> <%= item.location ? item.location.state : 'Delhi' %>
+                  </span>
+                </td>
+                <td>
+                  <% if (item.violationsCount > 0) { %>
+                    <span class="badge bg-red-100 text-red-800 border border-red-200 font-semibold">
+                      <%= item.violationsCount %> <%= t('badgeViolations') %>
+                    </span>
+                  <% } else { %>
+                    <span class="text-slate-400"><%= t('badgeNone') %></span>
+                  <% } %>
+                </td>
+                <td>
+                  <% if (item.complianceStatus === 'COMPLIANT') { %>
+                    <span class="badge bg-emerald-100 text-emerald-800"><%= t('statusCompliant') %></span>
+                  <% } else if (item.complianceStatus === 'WARNING') { %>
+                    <span class="badge bg-amber-100 text-amber-800"><%= t('statusWarning') %></span>
+                  <% } else { %>
+                    <span class="badge bg-red-100 text-red-800"><%= t('statusNonCompliant') %></span>
+                  <% } %>
+                </td>
+                <td class="font-bold text-red-600">
+                  ₹ <%= (item.section36Penalty ? item.section36Penalty.estimatedAmount : 25000).toLocaleString('en-IN') %>
+                </td>
+                <td class="pe-4 text-end space-x-1 whitespace-nowrap">
+                  <a href="/inspections/<%= item._id %>/sandbox" class="btn btn-outline-primary btn-sm text-[11px] py-1 px-2" title="<%= t('btnSandbox') %>">
+                    <i class="fa-solid fa-microchip"></i>
+                  </a>
+                  <button type="button" class="btn btn-warning btn-sm text-[11px] font-bold py-1 px-2.5 shadow-xs btn-open-notice-modal"
+                    data-id="<%= item._id %>"
+                    data-type="WARNING"
+                    data-product="<%= item.productName %>"
+                    data-manufacturer="<%= item.extractedData.manufacturer || '' %>"
+                    data-violations="<%= (item.violationsList || []).join(';') %>"
+                    data-penalty="<%= item.section36Penalty ? item.section36Penalty.estimatedAmount : 25000 %>"
+                    title="Issue Pre-Enforcement Warning Notice with Rectification Deadline">
+                    <i class="fa-solid fa-triangle-exclamation me-1"></i> Warning Notice
+                  </button>
+                  <button type="button" class="btn btn-danger btn-sm text-[11px] font-bold py-1 px-2 shadow-xs btn-open-notice-modal"
+                    data-id="<%= item._id %>"
+                    data-type="SHOW_CAUSE"
+                    data-product="<%= item.productName %>"
+                    data-manufacturer="<%= item.extractedData.manufacturer || '' %>"
+                    data-violations="<%= (item.violationsList || []).join(';') %>"
+                    data-penalty="<%= item.section36Penalty ? item.section36Penalty.estimatedAmount : 25000 %>"
+                    title="Issue Formal Section 36 Show-Cause Notice">
+                    <i class="fa-solid fa-gavel me-0.5"></i> SCN
+                  </button>
+                  <a href="/reports/<%= item._id %>/pdf" class="btn btn-outline-danger btn-sm text-[11px] py-1 px-2" title="<%= t('btnDownloadPdf') %>">
+                    <i class="fa-solid fa-file-pdf"></i>
+                  </a>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
   </div>
 
   <!-- Recent Issued Section 36 Notices List -->

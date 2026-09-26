@@ -23,42 +23,47 @@ def run_standalone(image_path):
         ocr = RapidOCR(text_score=0.35, use_angle_cls=False)
         if hasattr(ocr, 'text_detector'):
             if hasattr(ocr.text_detector, 'preprocess_op') and len(ocr.text_detector.preprocess_op) > 0:
-                ocr.text_detector.preprocess_op[0].limit_side_len = 420
+                ocr.text_detector.preprocess_op[0].limit_side_len = 640
                 ocr.text_detector.preprocess_op[0].limit_type = 'max'
             if hasattr(ocr.text_detector, 'postprocess_op'):
                 ocr.text_detector.postprocess_op.unclip_ratio = 1.9
-                ocr.text_detector.postprocess_op.box_thresh = 0.45
-                ocr.text_detector.postprocess_op.max_candidates = 500
+                ocr.text_detector.postprocess_op.box_thresh = 0.40
+                ocr.text_detector.postprocess_op.max_candidates = 800
         parser = PackagingLayoutParser()
 
         enhanced_rgb, scale = ImagePreprocessor.preprocess_for_ocr(img_np)
-        dt_boxes, _ = ocr.text_detector(enhanced_rgb)
+        ocr_result, _ = ocr(enhanced_rgb)
+        del enhanced_rgb
+
         raw_boxes = []
+        items = []
+        if isinstance(ocr_result, (list, tuple)):
+            for it in ocr_result:
+                if isinstance(it, (list, tuple)) and len(it) >= 3:
+                    items.append((it[0], it[1], it[2]))
+        elif hasattr(ocr_result, 'boxes') and hasattr(ocr_result, 'txts') and hasattr(ocr_result, 'scores'):
+            boxes = ocr_result.boxes or []
+            txts = ocr_result.txts or []
+            scores = ocr_result.scores or []
+            for b, t, s in zip(boxes, txts, scores):
+                items.append((b, t, s))
 
-        if dt_boxes is not None and len(dt_boxes) > 0:
-            dt_boxes = ocr.sorted_boxes(dt_boxes)
-            if len(dt_boxes) > 35:
-                dt_boxes = dt_boxes[:35]
-            img_crop_list = ocr.get_crop_img_list(enhanced_rgb, dt_boxes)
-            del enhanced_rgb
-
-            rec_res, _ = ocr.text_recognizer(img_crop_list)
-            filter_boxes, filter_rec_res = ocr.filter_boxes_rec_by_score(dt_boxes, rec_res)
-            for dt, rec in zip(filter_boxes, filter_rec_res):
-                box_coords = [
-                    [round(float(p[0]) / scale, 2), round(float(p[1]) / scale, 2)]
-                    for p in dt
-                ]
-                text = str(rec[0]).strip()
-                conf = float(rec[1])
-                if text:
-                    raw_boxes.append({
-                        'box': box_coords,
-                        'text': text,
-                        'confidence': conf
-                    })
-        else:
-            del enhanced_rgb
+        for box_pts, text_val, conf_val in items:
+            box_coords = [
+                [round(float(p[0]) / scale, 2), round(float(p[1]) / scale, 2)]
+                for p in box_pts
+            ]
+            text = str(text_val).strip()
+            try:
+                conf = float(conf_val)
+            except (ValueError, TypeError):
+                conf = 0.85
+            if text:
+                raw_boxes.append({
+                    'box': box_coords,
+                    'text': text,
+                    'confidence': conf
+                })
 
         structured, full_text = parser.parse(raw_boxes, image_width=width, image_height=height)
 

@@ -19,36 +19,36 @@ class PackagingLayoutParser:
             re.IGNORECASE
         )
         self.re_tax = re.compile(
-            r'(?:incl(?:usive)?\s*(?:of)?\s*(?:all)?\s*tax(?:es)?|tax(?:es)?\s*incl(?:usive)?|all\s*taxes\s*included|\(incl\.\s*of\s*taxes\))',
+            r'(?:inc[a-z0-9]*\s*(?:of|df)?\s*(?:all)?\s*(?:t?ax[a-z]*|dut[a-z]*)|(?:tax|t?ax[a-z]*)\s*(?:inc|in|all)[a-z]*|all\s*t?ax[a-z]*\s*inc[a-z]*|\(incl[a-z\.\s]*(?:tax|axes)[a-z]*\))',
             re.IGNORECASE
         )
         self.re_net_qty = re.compile(
-            r'(?:net\s*(?:qty\.?|quantity|wt\.?|weight|vol\.?|volume|contents?)|quantity|n\.?w\.?)\s*[:=-]?\s*([0-9]+(?:[\.,][0-9]+)?)\s*([a-zA-Z]+|units?|nos?\.?|n|u)',
+            r'(?:net\s*(?:qty\.?|q[a-z]*|quantity|wt\.?|weight|vol\.?|volume|contents?)|quantity|n\.?w\.?)\s*[:=-]?\s*([0-9]+(?:[\.,][0-9]+)?)\s*[\.,]?\s*([a-zA-Z]+|units?|nos?\.?|n|u)',
             re.IGNORECASE
         )
         self.re_qty_standalone = re.compile(
-            r'(?:^|\b)([0-9]+(?:[\.,][0-9]+)?)\s*(kg|kq|k9|g|gm|gms|grams|grm|l|ltr|ltrs|liter|litres|ml|mlt|m1|mL|m|cm|mm|n|units?|pieces?)\b',
+            r'(?:^|\b)([0-9]+(?:[\.,][0-9]+)?)\s*[\.,]?\s*(kg|kq|k9|ka|g|gm|gms|grams|grm|l|ltr|ltrs|liter|litres|ml|mlt|m1|mL|m|cm|mm|n|units?|pieces?)\b',
             re.IGNORECASE
         )
         self.re_mfg_date = re.compile(
-            r'(?:mfd\.?|mfg\.?|packed|pkd\.?|dom\.?|date\s*of\s*(?:mfg|mfd|pkd|packing|manufacture))\s*[:=-]?\s*([0-9]{1,2}[\/\.-][0-9]{2,4}|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*[\s\.,\'-]+[0-9]{2,4}|[0-9]{2,4})',
+            r'(?:mfd\.?|mfg\.?|packed(?:\s*on)?|pkd\.?|dom\.?|pack(?:ed)?\s*date|da[te]*\s*of\s*(?:mfg|mfd|pkd|packing|manufacture))\s*[:=-]?\s*([0-9]{1,2}[\/\.-][0-9]{2,4}|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*[\s\.,\'-]+[0-9]{2,4}|20[12][0-9])',
             re.IGNORECASE
         )
         self.re_exp_date = re.compile(
             r'(?:use\s*by|best\s*before|exp\.?|expiry\s*(?:date)?|b\.?b\.?)\s*[:=-]?\s*([0-9]{1,2}[\/\.-][0-9]{2,4}|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*[\s\.,\'-]+[0-9]{2,4}|[0-9]+\s*months?(?:\s*from\s*(?:mfg|pkd))?)',
             re.IGNORECASE
         )
-        self.re_batch = re.compile(r'(?:b\.?\s*no\.?|batch\s*(?:no\.?|code)|lot\s*(?:no\.?|code))\s*[:=-]?\s*([a-zA-Z0-9\-\/]+)', re.IGNORECASE)
-        self.re_origin = re.compile(r'(?:country\s*of\s*origin|made\s*in|product\s*of|origin)\s*[:=-]?\s*([a-zA-Z\s]{2,25})', re.IGNORECASE)
+        self.re_batch = re.compile(r'(?:b\.?\s*n[oa]\.?|batch\s*(?:n[oa]\.?|code)|lot\s*(?:n[oa]\.?|code))\s*[:=-]?\s*([a-zA-Z0-9\-\/]+)', re.IGNORECASE)
+        self.re_origin = re.compile(r'(?:coun?tr?y\s*of\s*origi?n?c?|made\s*in|product\s*of|origi?n?c?)\s*[:=-]?\s*([a-zA-Z\s]{2,25})', re.IGNORECASE)
         self.re_phone = re.compile(r'(?:(?:tel|phone|ph|call|toll\s*free|care\s*no|helpline)\s*[:=-]?\s*)?(\+?91[\-\s]?[6-9][0-9]{9}|1800[\-\s]?[0-9]{3}[\-\s]?[0-9]{3,4}|[6-9][0-9]{9})', re.IGNORECASE)
-        self.re_email = re.compile(r'([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)')
+        self.re_email = re.compile(r'([a-zA-Z0-9_.+-]+(?:\s*@\s*|\s*g\s*|\s*©\s*)[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)')
         self.re_mfg_key = re.compile(r'(?:mfd\.?\s*by|manufactured\s*(?:&|and)?\s*(?:packed\s*)?by|mfg\s*by|packed\s*by|pkd\s*by|marketed\s*by|mktd\s*by|imported\s*by)\s*[:=-]?', re.IGNORECASE)
         self.re_care_key = re.compile(r'(?:customer\s*care|consumer\s*care|for\s*complaints|in\s*case\s*of\s*feedback|consumer\s*feedback)\s*[:=-]?', re.IGNORECASE)
         self.re_commodity_key = re.compile(r'(?:commodity(?:\s*name)?|product(?:\s*name)?|item(?:\s*name)?|name\s*of\s*commodity|generic\s*name)\s*[:=-]?', re.IGNORECASE)
         self.re_pincode = re.compile(r'\b[1-9][0-9]{5}\b')
         self.re_company = re.compile(r'\b(?:pvt\.?\s*ltd|ltd|llp|industries|foods|agro|products|enterprises|works|mills|beverages)\b', re.IGNORECASE)
         self.re_usp = re.compile(
-            r'(?:u\.?\s*s\.?\s*p\.?|unit\s*sal?e?\s*price|unique\s*sell(?:ing)?\s*price|unit\s*price)\s*[:=-]?\s*(?:₹|rs\.?|inr)?\s*([0-9]+(?:[\.,][0-9]{1,2})?)\s*(?:\/|\s*per\s*)\s*([a-zA-Z0-9]+(?:\s*[a-zA-Z]+)?)',
+            r'(?:u\.?\s*s\.?\s*p\.?|un[it]*\s*sal?e?\s*pri[ce]*|unique\s*sell(?:ing)?\s*price|unit\s*price|unt\s*saleprie)\s*[:=-]?\s*(?:₹|rs\.?|inr)?\s*([0-9]+(?:[\.,][0-9]{1,2})?)\s*(?:\/|\s*per\s*|\s*)\s*([a-zA-Z0-9]+(?:\s*[a-zA-Z]+)?)',
             re.IGNORECASE
         )
         self.re_usp_standalone = re.compile(
@@ -89,9 +89,9 @@ class PackagingLayoutParser:
 
     def _normalize_unit(self, unit_str):
         u = unit_str.strip().lower()
-        if u in ['kq', 'k9']:
+        if u in ['kq', 'k9', 'ka']:
             return 'kg'
-        if u in ['m1']:
+        if u in ['m1', 'mlt']:
             return 'ml'
         if u in ['grm', 'gms', 'gm']:
             return u
@@ -167,10 +167,12 @@ class PackagingLayoutParser:
         if origin_m:
             raw_country = origin_m.group(1).strip()
             clean_country = re.split(r'[\n\r,.]', raw_country)[0].strip().title()
+            if 'inda' in clean_country.lower() or 'indi' in clean_country.lower():
+                clean_country = "India"
             result['countryOfOrigin'] = clean_country
-        elif re.search(r'\b(made\s*in\s*india|product\s*of\s*india)\b', full_text, re.IGNORECASE):
+        elif re.search(r'\b(made\s*in\s*india|product\s*of\s*india|made\s*in\s*inda)\b', full_text, re.IGNORECASE):
             result['countryOfOrigin'] = "India"
-        elif re.search(r'\bindia\b', full_text, re.IGNORECASE):
+        elif re.search(r'\b(india|inda)\b', full_text, re.IGNORECASE):
             result['countryOfOrigin'] = "India"
 
         # Check Batch No

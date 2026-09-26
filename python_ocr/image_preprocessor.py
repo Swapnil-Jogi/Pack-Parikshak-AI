@@ -29,17 +29,17 @@ class ImagePreprocessor:
         max_dim = float(max(h, w))
         scale = 1.0
 
-        # Memory safeguard:
-        # Scale down large images (> 420px) to strictly maintain ultra-low memory profile on 512MB containers.
-        # RapidOCR operates with high precision at 420px while completing full inference in ~1.0 second.
-        # Only upscale very tiny images (< 300px) to conserve RAM.
-        if max_dim > 420.0:
-            scale = 420.0 / max_dim
+        # Memory & Accuracy Balance:
+        # Scale large packaging images to 640px max dimension.
+        # This provides sharp character definition for fine packaging typography (MRP, dates, PIN codes, USP)
+        # while keeping peak memory under ~105MB, safely within Render's 512MB limit.
+        if max_dim > 640.0:
+            scale = 640.0 / max_dim
             new_w = int(round(w * scale))
             new_h = int(round(h * scale))
             bgr = cv2.resize(bgr, (new_w, new_h), interpolation=cv2.INTER_AREA)
-        elif max_dim < 300.0:
-            scale = 300.0 / max_dim
+        elif max_dim < 360.0:
+            scale = 360.0 / max_dim
             new_w = int(round(w * scale))
             new_h = int(round(h * scale))
             bgr = cv2.resize(bgr, (new_w, new_h), interpolation=cv2.INTER_LINEAR)

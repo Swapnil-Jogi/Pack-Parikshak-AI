@@ -27,17 +27,17 @@ try:
         text_score=0.35,
         use_angle_cls=False
     )
-    # Tune detector parameters for packaging labels & cap max side length to 420px
+    # Tune detector parameters for packaging labels & cap max side length to 640px
     if hasattr(ocr_engine, 'text_detector'):
         if hasattr(ocr_engine.text_detector, 'preprocess_op') and len(ocr_engine.text_detector.preprocess_op) > 0:
-            ocr_engine.text_detector.preprocess_op[0].limit_side_len = 420
+            ocr_engine.text_detector.preprocess_op[0].limit_side_len = 640
             ocr_engine.text_detector.preprocess_op[0].limit_type = 'max'
         if hasattr(ocr_engine.text_detector, 'postprocess_op'):
             ocr_engine.text_detector.postprocess_op.unclip_ratio = 1.9
-            ocr_engine.text_detector.postprocess_op.box_thresh = 0.45
-            ocr_engine.text_detector.postprocess_op.max_candidates = 500
+            ocr_engine.text_detector.postprocess_op.box_thresh = 0.40
+            ocr_engine.text_detector.postprocess_op.max_candidates = 800
     layout_parser = PackagingLayoutParser()
-    print("[Python-OCR] Ultra-low-memory PaddleOCR Engine initialized and ready (420px profile).", flush=True)
+    print("[Python-OCR] High-precision low-memory PaddleOCR Engine initialized and ready (640px profile).", flush=True)
 
     # Pre-warm detector and recognizer ONNX graphs with a tiny text image
     try:
@@ -71,40 +71,43 @@ def process_image(img_pil):
         del img_np
         print(f"[Python-OCR Process] Preprocessing complete: shape={enhanced_rgb.shape}, scale={scale:.3f}", flush=True)
 
-        # 2. Text Detection
+        # 2. Text Inference via Universal Callable
         t0 = time.time()
-        print("[Python-OCR Process] Running text detector...", flush=True)
-        dt_boxes, det_elapse = ocr_engine.text_detector(enhanced_rgb)
-        print(f"[Python-OCR Process] Detector found {len(dt_boxes) if dt_boxes else 0} boxes in {det_elapse:.2f}s", flush=True)
+        print("[Python-OCR Process] Running OCR engine inference...", flush=True)
+        ocr_result, elapse = ocr_engine(enhanced_rgb)
+        del enhanced_rgb
+        elapse_str = f"{elapse:.2f}s" if isinstance(elapse, (int, float)) else str(elapse)
+        print(f"[Python-OCR Process] OCR inference finished in {elapse_str}", flush=True)
 
         raw_boxes = []
-        if dt_boxes is not None and len(dt_boxes) > 0:
-            dt_boxes = ocr_engine.sorted_boxes(dt_boxes)
-            if len(dt_boxes) > 35:
-                dt_boxes = dt_boxes[:35]
-            img_crop_list = ocr_engine.get_crop_img_list(enhanced_rgb, dt_boxes)
-            del enhanced_rgb
+        items = []
+        if isinstance(ocr_result, (list, tuple)):
+            for it in ocr_result:
+                if isinstance(it, (list, tuple)) and len(it) >= 3:
+                    items.append((it[0], it[1], it[2]))
+        elif hasattr(ocr_result, 'boxes') and hasattr(ocr_result, 'txts') and hasattr(ocr_result, 'scores'):
+            boxes = ocr_result.boxes or []
+            txts = ocr_result.txts or []
+            scores = ocr_result.scores or []
+            for b, t, s in zip(boxes, txts, scores):
+                items.append((b, t, s))
 
-            print(f"[Python-OCR Process] Running recognizer on {len(img_crop_list)} crops...", flush=True)
-            rec_res, rec_elapse = ocr_engine.text_recognizer(img_crop_list)
-            print(f"[Python-OCR Process] Recognizer finished in {rec_elapse:.2f}s", flush=True)
-
-            filter_boxes, filter_rec_res = ocr_engine.filter_boxes_rec_by_score(dt_boxes, rec_res)
-            for dt, rec in zip(filter_boxes, filter_rec_res):
-                box_coords = [
-                    [round(float(p[0]) / scale, 2), round(float(p[1]) / scale, 2)]
-                    for p in dt
-                ]
-                text = str(rec[0]).strip()
-                conf = float(rec[1])
-                if text:
-                    raw_boxes.append({
-                        'box': box_coords,
-                        'text': text,
-                        'confidence': conf
-                    })
-        else:
-            del enhanced_rgb
+        for box_pts, text_val, conf_val in items:
+            box_coords = [
+                [round(float(p[0]) / scale, 2), round(float(p[1]) / scale, 2)]
+                for p in box_pts
+            ]
+            text = str(text_val).strip()
+            try:
+                conf = float(conf_val)
+            except (ValueError, TypeError):
+                conf = 0.85
+            if text:
+                raw_boxes.append({
+                    'box': box_coords,
+                    'text': text,
+                    'confidence': conf
+                })
 
         # 3. Spatial & semantic layout parsing using font-tolerant heuristics
         print(f"[Python-OCR Process] Running layout parser on {len(raw_boxes)} boxes...", flush=True)

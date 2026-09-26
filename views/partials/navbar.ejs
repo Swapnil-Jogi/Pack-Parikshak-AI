@@ -164,21 +164,21 @@
           <% } %>
 
           <!-- Mobile Menu Button -->
-          <button class="nav-link-item lg:hidden text-slate-300 hover:text-white p-2 rounded-lg hover:bg-slate-800 transition" type="button" data-bs-toggle="collapse" data-bs-target="#mobileMenu">
-            <i class="fa-solid fa-bars text-lg"></i>
+          <button id="mobileMenuBtn" class="nav-link-item lg:hidden text-slate-300 hover:text-white p-2 rounded-lg hover:bg-slate-800 transition focus:outline-none" type="button" aria-expanded="false" aria-controls="mobileMenu" aria-label="Toggle navigation menu">
+            <i id="mobileMenuIcon" class="fa-solid fa-bars text-lg"></i>
           </button>
         </div>
 
       </div>
     </div>
 
-    <!-- Mobile Menu Collapse -->
-    <div class="collapse lg:hidden bg-slate-950 border-t border-slate-800 px-4 py-3" id="mobileMenu">
+    <!-- Mobile Menu Collapse (Pure Toggle - Never Vanishes) -->
+    <div class="hidden lg:hidden bg-slate-950 border-t border-slate-800 px-4 py-3 shadow-2xl transition-all duration-200" id="mobileMenu">
       <div class="flex flex-col space-y-2 text-sm">
         <a href="/" class="nav-link-item py-2 px-3 rounded-lg text-slate-200 hover:text-white flex items-center gap-2">
           <i class="fa-solid fa-house text-slate-400 text-xs"></i> <%= t('home') %>
         </a>
-        <a href="/inspections/new" class="nav-link-item py-2 px-3 rounded-lg text-amber-300 font-semibold bg-amber-500/10 border border-amber-500/30 flex items-center gap-2">
+        <a href="/inspections/new" class="nav-link-item py-2 px-3 rounded-lg text-amber-300 font-semibold hover:bg-amber-500/20 flex items-center gap-2">
           <i class="fa-solid fa-magnifying-glass text-xs"></i> <%= t('scan') %>
         </a>
         <a href="/lmpc-guide" class="nav-link-item py-2 px-3 rounded-lg text-slate-200 hover:text-white flex items-center gap-2">
@@ -233,8 +233,50 @@
 <%- include('flash') %>
 
 <script>
-  // Tactile clicking outline effect for navbar tabs
   document.addEventListener('DOMContentLoaded', function () {
+    // 1. Mobile Hamburger Menu Toggle (Independent & reliable)
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+    const mobileMenuIcon = document.getElementById('mobileMenuIcon');
+
+    if (mobileMenuBtn && mobileMenu) {
+      mobileMenuBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const isHidden = mobileMenu.classList.contains('hidden');
+        if (isHidden) {
+          mobileMenu.classList.remove('hidden');
+          mobileMenuBtn.setAttribute('aria-expanded', 'true');
+          if (mobileMenuIcon) {
+            mobileMenuIcon.classList.remove('fa-bars');
+            mobileMenuIcon.classList.add('fa-xmark');
+          }
+        } else {
+          mobileMenu.classList.add('hidden');
+          mobileMenuBtn.setAttribute('aria-expanded', 'false');
+          if (mobileMenuIcon) {
+            mobileMenuIcon.classList.remove('fa-xmark');
+            mobileMenuIcon.classList.add('fa-bars');
+          }
+        }
+      });
+
+      // Close menu when tapping outside of it on mobile
+      document.addEventListener('click', function (e) {
+        if (!mobileMenu.contains(e.target) && !mobileMenuBtn.contains(e.target)) {
+          if (!mobileMenu.classList.contains('hidden')) {
+            mobileMenu.classList.add('hidden');
+            mobileMenuBtn.setAttribute('aria-expanded', 'false');
+            if (mobileMenuIcon) {
+              mobileMenuIcon.classList.remove('fa-xmark');
+              mobileMenuIcon.classList.add('fa-bars');
+            }
+          }
+        }
+      });
+    }
+
+    // 2. Tactile clicking outline effect for navbar tabs
     const navItems = document.querySelectorAll('.nav-link-item');
     navItems.forEach(function (el) {
       el.addEventListener('mousedown', function () {

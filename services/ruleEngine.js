@@ -77,19 +77,22 @@ class RuleEngine {
     // -------------------------------------------------------------
     // RULE 2: Rule 6(1)(aa) & (a) - Country of Origin & Address of Product
     // -------------------------------------------------------------
-    const origin = (data.countryOfOrigin || "").trim();
+    let origin = (data.countryOfOrigin || "").trim();
+    if (!origin && (/\b(india|bharat|made in india)\b/i.test(textBlob) || /\b(india|bharat)\b/i.test(data.manufacturer || ""))) {
+      origin = "India";
+    }
     const productAddr = (data.productAddress || "").trim();
     const mfgFull = (data.manufacturer || "").trim();
 
     // Check if manufacturing/product address is provided either in productAddress, inside manufacturer string, or in raw text
     const hasSpecificProductAddr = Boolean(
       (productAddr && productAddr.length >= 6) ||
-      (mfgFull && (/\b[1-9][0-9]{5}\b/.test(mfgFull) || /(?:plot|sector|road|street|nagar|ward|phase|industrial|village|dist|state|city|factory|premises|unit)/i.test(mfgFull) || mfgFull.length > 25)) ||
+      (mfgFull && (/\b[1-9][0-9]{2}\s?[0-9]{3}\b/.test(mfgFull) || /(?:plot|sector|road|street|nagar|ward|phase|industrial|village|dist|state|city|factory|premises|unit|shop|gat|maharashtra|haryana|gujarat|karnataka|delhi|punjab|rajasthan|tamil\s*nadu|kerala|uttar\s*pradesh)/i.test(mfgFull) || mfgFull.length > 25)) ||
       /(?:mfd\.?\s*at|packed\s*at|factory\s*(?:address|at)|premises\s*at|unit\s*(?:address|at))\s*[:=-]?\s*([a-zA-Z0-9,\s\-]{6,})/i.test(textBlob)
     );
 
     let detectedAddrStr = productAddr || "";
-    if (!detectedAddrStr && mfgFull && (/\b[1-9][0-9]{5}\b/.test(mfgFull) || mfgFull.length > 20)) {
+    if (!detectedAddrStr && mfgFull && (/\b[1-9][0-9]{2}\s?[0-9]{3}\b/.test(mfgFull) || mfgFull.length > 20)) {
       detectedAddrStr = mfgFull;
     }
 
@@ -338,11 +341,11 @@ class RuleEngine {
 
     // If not provided in fields, check rawText or textBlob
     if (!usp) {
-      const uspMatch = textBlob.match(/(?:u\.?\s*s\.?\s*p\.?|unit\s*sal?e?\s*price|unique\s*sell(?:ing)?\s*price|unit\s*price)\s*[:=-]?\s*(?:₹|rs\.?|inr)?\s*([0-9]+(?:[\.,][0-9]{1,2})?\s*(?:\/|\s*per\s*)\s*[a-zA-Z0-9]+)/i);
+      const uspMatch = textBlob.match(/(?:u\.?\s*s\.?\s*p\.?|unit\s*sal?e?\s*price|unique\s*sell(?:ing)?\s*price|unit\s*price)\s*[:=-]?\s*(?:₹|rs\.?|inr)?\s*([0-9]+(?:[\.,][0-9]{1,3})?\s*(?:\/|\s*per\s*)\s*[a-zA-Z0-9]+)/i);
       if (uspMatch) {
         usp = uspMatch[0];
       } else {
-        const standaloneUsp = textBlob.match(/(?:₹|rs\.?|inr)\s*([0-9]+(?:[\.,][0-9]{1,2})?\s*(?:\/|\s*per\s*)\s*(?:100\s*g|100\s*ml|kg|g|gm|ml|l|ltr|unit|piece|u|n))\b/i);
+        const standaloneUsp = textBlob.match(/(?:₹|rs\.?|inr)?\s*([0-9]+(?:[\.,][0-9]{1,3})?\s*(?:\/|\s*per\s*)\s*(?:100\s*g|100\s*ml|kg|g|gm|ml|l|ltr|unit|piece|u|n))\b/i);
         if (standaloneUsp) {
           usp = standaloneUsp[0];
         }

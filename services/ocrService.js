@@ -73,7 +73,12 @@ class OcrService {
               }
 
               try {
-                const parsed = JSON.parse(stdout.trim());
+                let jsonStr = stdout.trim();
+                const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                  jsonStr = jsonMatch[0];
+                }
+                const parsed = JSON.parse(jsonStr);
                 if (!parsed.success) {
                   return reject(new Error(parsed.error || "OCR failed to parse image"));
                 }

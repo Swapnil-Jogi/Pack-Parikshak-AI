@@ -24,20 +24,20 @@ try:
     # Optimized parameters for low-memory container environments (512MB RAM ceiling)
     # Disabling angle classifier saves ~60MB RAM by preventing cls ONNX model loading
     ocr_engine = RapidOCR(
-        text_score=0.35,
-        use_angle_cls=False
+        text_score=0.22,
+        use_angle_cls=True
     )
-    # Tune detector parameters for packaging labels & cap max side length to 640px
+    # Tune detector parameters for packaging labels & cap max side length to 1100px
     if hasattr(ocr_engine, 'text_detector'):
         if hasattr(ocr_engine.text_detector, 'preprocess_op') and len(ocr_engine.text_detector.preprocess_op) > 0:
-            ocr_engine.text_detector.preprocess_op[0].limit_side_len = 640
+            ocr_engine.text_detector.preprocess_op[0].limit_side_len = 1100
             ocr_engine.text_detector.preprocess_op[0].limit_type = 'max'
         if hasattr(ocr_engine.text_detector, 'postprocess_op'):
-            ocr_engine.text_detector.postprocess_op.unclip_ratio = 1.9
-            ocr_engine.text_detector.postprocess_op.box_thresh = 0.40
-            ocr_engine.text_detector.postprocess_op.max_candidates = 800
+            ocr_engine.text_detector.postprocess_op.unclip_ratio = 2.0
+            ocr_engine.text_detector.postprocess_op.box_thresh = 0.35
+            ocr_engine.text_detector.postprocess_op.max_candidates = 1000
     layout_parser = PackagingLayoutParser()
-    print("[Python-OCR] High-precision low-memory PaddleOCR Engine initialized and ready (640px profile).", flush=True)
+    print("[Python-OCR] High-precision low-memory PaddleOCR Engine initialized and ready (1100px profile + auto-orient).", flush=True)
 
     # Pre-warm detector and recognizer ONNX graphs with a tiny text image
     try:
@@ -56,22 +56,33 @@ except Exception as e:
     ocr_engine = None
     layout_parser = None
 
-def process_image(img_pil):
+def process_image(img_pil, image_path=None):
     orig_w, orig_h = img_pil.size
     print(f"[Python-OCR Process] Starting processing for image: {orig_w}x{orig_h}", flush=True)
-    img_np = np.array(img_pil.convert('RGB'))
+    img_bgr = cv2.cvtColor(np.array(img_pil.convert('RGB')), cv2.COLOR_RGB2BGR)
 
     if ocr_engine is None:
         raise RuntimeError("OCR Engine is not initialized")
 
     try:
-        # 1. Advanced Preprocessing: CLAHE contrast, gentle scale, unsharp masking
+        # 1. Smart Auto-Orientation: detect sideways packaging and rotate upright
+        aligned_bgr, rot_deg = ImagePreprocessor.detect_and_align_orientation(img_bgr, ocr_engine)
+        if rot_deg != 0 and image_path and os.path.exists(image_path):
+            try:
+                cv2.imwrite(image_path, aligned_bgr)
+                print(f"[Python-OCR Process] Packaging rotated {rot_deg}° and saved upright to {image_path}", flush=True)
+            except Exception as save_err:
+                print(f"[Python-OCR Process] Note: failed to overwrite upright image: {save_err}", flush=True)
+
+        upright_h, upright_w = aligned_bgr.shape[:2]
+
+        # 2. Advanced Preprocessing: CLAHE contrast, gentle scale, unsharp masking
         print("[Python-OCR Process] Preprocessing image...", flush=True)
-        enhanced_rgb, scale = ImagePreprocessor.preprocess_for_ocr(img_np)
-        del img_np
+        enhanced_rgb, scale = ImagePreprocessor.preprocess_for_ocr(aligned_bgr)
+        del aligned_bgr, img_bgr
         print(f"[Python-OCR Process] Preprocessing complete: shape={enhanced_rgb.shape}, scale={scale:.3f}", flush=True)
 
-        # 2. Text Inference via Universal Callable
+        # 3. Text Inference via Universal Callable
         t0 = time.time()
         print("[Python-OCR Process] Running OCR engine inference...", flush=True)
         ocr_result, elapse = ocr_engine(enhanced_rgb)
@@ -109,14 +120,14 @@ def process_image(img_pil):
                     'confidence': conf
                 })
 
-        # 3. Spatial & semantic layout parsing using font-tolerant heuristics
+        # 4. Spatial & semantic layout parsing using font-tolerant heuristics
         print(f"[Python-OCR Process] Running layout parser on {len(raw_boxes)} boxes...", flush=True)
-        structured, full_text = layout_parser.parse(raw_boxes, image_width=orig_w, image_height=orig_h)
+        structured, full_text = layout_parser.parse(raw_boxes, image_width=upright_w, image_height=upright_h)
         print(f"[Python-OCR Process] Structured parsing complete in {time.time() - t0:.2f}s!", flush=True)
 
         return {
             'success': True,
-            'image_dims': {'width': orig_w, 'height': orig_h},
+            'image_dims': {'width': upright_w, 'height': upright_h},
             'raw_text': full_text,
             'boxes': raw_boxes,
             'structured': structured,
@@ -180,11 +191,11 @@ def run_ocr():
                 img_bytes = base64.b64decode(b64_data)
                 img_pil = Image.open(io.BytesIO(img_bytes))
 
-        if img_pil is None:
-            print("[Python-OCR Request Error] No valid image could be resolved from request payload.", flush=True)
-            return jsonify({'success': False, 'error': 'No image provided. Upload a file or provide image_path/base64_image.'}), 400
+        target_img_path = None
+        if request.is_json and data and 'image_path' in data:
+            target_img_path = data['image_path']
 
-        res = process_image(img_pil)
+        res = process_image(img_pil, image_path=target_img_path)
         return jsonify(res)
 
     except Exception as e:

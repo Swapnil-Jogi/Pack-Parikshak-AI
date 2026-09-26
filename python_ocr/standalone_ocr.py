@@ -14,26 +14,39 @@ def run_standalone(image_path):
         sys.exit(1)
 
     try:
-        img_pil = Image.open(image_path)
-        width, height = img_pil.size
-        img_np = np.array(img_pil.convert('RGB'))
+        import cv2
+        img_bgr = cv2.imread(image_path)
+        if img_bgr is None:
+            img_pil = Image.open(image_path)
+            img_bgr = cv2.cvtColor(np.array(img_pil.convert('RGB')), cv2.COLOR_RGB2BGR)
 
         from image_preprocessor import ImagePreprocessor
 
-        ocr = RapidOCR(text_score=0.35, use_angle_cls=False)
+        ocr = RapidOCR(text_score=0.22, use_angle_cls=True)
         if hasattr(ocr, 'text_detector'):
             if hasattr(ocr.text_detector, 'preprocess_op') and len(ocr.text_detector.preprocess_op) > 0:
-                ocr.text_detector.preprocess_op[0].limit_side_len = 640
+                ocr.text_detector.preprocess_op[0].limit_side_len = 1100
                 ocr.text_detector.preprocess_op[0].limit_type = 'max'
             if hasattr(ocr.text_detector, 'postprocess_op'):
-                ocr.text_detector.postprocess_op.unclip_ratio = 1.9
-                ocr.text_detector.postprocess_op.box_thresh = 0.40
-                ocr.text_detector.postprocess_op.max_candidates = 800
+                ocr.text_detector.postprocess_op.unclip_ratio = 2.0
+                ocr.text_detector.postprocess_op.box_thresh = 0.35
+                ocr.text_detector.postprocess_op.max_candidates = 1000
         parser = PackagingLayoutParser()
 
-        enhanced_rgb, scale = ImagePreprocessor.preprocess_for_ocr(img_np)
+        # 1. Smart Auto-Orientation
+        aligned_bgr, rot_deg = ImagePreprocessor.detect_and_align_orientation(img_bgr, ocr)
+        if rot_deg != 0 and os.path.exists(image_path):
+            try:
+                cv2.imwrite(image_path, aligned_bgr)
+            except Exception:
+                pass
+
+        upright_h, upright_w = aligned_bgr.shape[:2]
+
+        # 2. Preprocess
+        enhanced_rgb, scale = ImagePreprocessor.preprocess_for_ocr(aligned_bgr)
         ocr_result, _ = ocr(enhanced_rgb)
-        del enhanced_rgb
+        del enhanced_rgb, aligned_bgr, img_bgr
 
         raw_boxes = []
         items = []
@@ -65,11 +78,11 @@ def run_standalone(image_path):
                     'confidence': conf
                 })
 
-        structured, full_text = parser.parse(raw_boxes, image_width=width, image_height=height)
+        structured, full_text = parser.parse(raw_boxes, image_width=upright_w, image_height=upright_h)
 
         output = {
             'success': True,
-            'image_dims': {'width': width, 'height': height},
+            'image_dims': {'width': upright_w, 'height': upright_h},
             'raw_text': full_text,
             'boxes': raw_boxes,
             'structured': structured,

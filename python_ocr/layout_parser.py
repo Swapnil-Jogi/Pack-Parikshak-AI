@@ -45,14 +45,22 @@ class PackagingLayoutParser:
         self.re_mfg_key = re.compile(r'(?:mfd\.?\s*by|manufactured\s*(?:&|and)?\s*(?:packed\s*)?by|mfg\s*by|packed\s*by|pkd\s*by|marketed\s*by|mktd\s*by|imported\s*by)\s*[:=-]?', re.IGNORECASE)
         self.re_care_key = re.compile(r'(?:customer\s*care|consumer\s*care|for\s*complaints|in\s*case\s*of\s*feedback|consumer\s*feedback)\s*[:=-]?', re.IGNORECASE)
         self.re_commodity_key = re.compile(r'(?:commodity(?:\s*name)?|product(?:\s*name)?|item(?:\s*name)?|name\s*of\s*commodity|generic\s*name)\s*[:=-]?', re.IGNORECASE)
-        self.re_pincode = re.compile(r'\b[1-9][0-9]{5}\b')
-        self.re_company = re.compile(r'\b(?:pvt\.?\s*ltd|ltd|llp|industries|foods|agro|products|enterprises|works|mills|beverages)\b', re.IGNORECASE)
+        self.re_commodity_fallback = re.compile(
+            r'\b(perfumed\s*talc|talcum\s*powder|talc|wheat\s*(?:atta|flour)|atta|flour|potato\s*chips|chips|biscuits?|cookies?|soap|detergent|shampoo|edible\s*oil|mustard\s*oil|hair\s*oil|sunflower\s*oil|refined\s*oil|tea|coffee|toothpaste|tooth\s*powder|face\s*wash|cream|lotion|spices|masala|salt|sugar|honey|ghee|butter|paneer|milk|mineral\s*water|packaged\s*drinking\s*water)\b',
+            re.IGNORECASE
+        )
+        self.re_indian_states = re.compile(
+            r'\b(maharashtra|haryana|gujarat|karnataka|delhi|punjab|rajasthan|uttar\s*pradesh|madhya\s*pradesh|tamil\s*nadu|kerala|andhra\s*pradesh|telangana|west\s*bengal|bihar|odisha|assam|goa|himachal\s*pradesh|uttarakhand)\b',
+            re.IGNORECASE
+        )
+        self.re_pincode = re.compile(r'\b[1-9][0-9]{2}\s?[0-9]{3}\b')
+        self.re_company = re.compile(r'\b(?:pvt\.?\s*ltd|ltd|llp|industries|foods|agro|products|enterprises|works|mills|beverages|foundation|ayurveda|laboratories|pharma)\b', re.IGNORECASE)
         self.re_usp = re.compile(
-            r'(?:u\.?\s*s\.?\s*p\.?|un[it]*\s*sal?e?\s*pri[ce]*|unique\s*sell(?:ing)?\s*price|unit\s*price|unt\s*saleprie)\s*[:=-]?\s*(?:₹|rs\.?|inr)?\s*([0-9]+(?:[\.,][0-9]{1,2})?)\s*(?:\/|\s*per\s*|\s*)\s*([a-zA-Z0-9]+(?:\s*[a-zA-Z]+)?)',
+            r'(?:u\.?\s*s\.?\s*p\.?|un[it]*\s*sal?e?\s*pri[ce]*|unique\s*sell(?:ing)?\s*price|unit\s*price|unt\s*saleprie)\s*[:=-]?\s*(?:₹|rs\.?|inr)?\s*([0-9]+(?:[\.,][0-9]{1,3})?)\s*(?:\/|\s*per\s*|\s*)\s*([a-zA-Z0-9]+(?:[ \t]+[a-zA-Z]+)?)',
             re.IGNORECASE
         )
         self.re_usp_standalone = re.compile(
-            r'(?:₹|rs\.?|inr)\s*([0-9]+(?:[\.,][0-9]{1,2})?)\s*(?:\/|\s*per\s*)\s*(?:100\s*g|100\s*ml|kg|g|gm|gms|ml|l|ltr|unit|piece|u|n)\b',
+            r'(?:₹|rs\.?|inr)?\s*([0-9]+(?:[\.,][0-9]{1,3})?)\s*(?:\/|\s*per\s*)\s*(?:100\s*g|100\s*ml|kg|g|gm|gms|ml|l|ltr|unit|piece|u|n)\b',
             re.IGNORECASE
         )
         self.re_product_addr_key = re.compile(
@@ -167,7 +175,7 @@ class PackagingLayoutParser:
         if origin_m:
             raw_country = origin_m.group(1).strip()
             clean_country = re.split(r'[\n\r,.]', raw_country)[0].strip().title()
-            if 'inda' in clean_country.lower() or 'indi' in clean_country.lower():
+            if any(x in clean_country.lower() for x in ['inda', 'indi', 'eipu', 'ndia', 'ind', 'dia']):
                 clean_country = "India"
             result['countryOfOrigin'] = clean_country
         elif re.search(r'\b(made\s*in\s*india|product\s*of\s*india|made\s*in\s*inda)\b', full_text, re.IGNORECASE):
@@ -390,24 +398,28 @@ class PackagingLayoutParser:
                         result['netQuantity'] = f"{num} {unit}"
                         break
 
-        # Fallback 2: Standalone Indian Manufacturer Address via Company + PIN Code heuristic
+        # Fallback 2: Standalone Indian Manufacturer Address via Company + PIN Code / State heuristic
         if not result['manufacturer']:
             for i, row in enumerate(structured_rows):
                 line = " ".join([b['text'] for b in row]).strip()
-                if self.re_company.search(line):
-                    addr_lines = [line]
-                    for next_idx in range(i + 1, min(i + 3, len(structured_rows))):
+                if self.re_company.search(line) or self.re_mfg_key.search(line) or re.search(r'marketed\s*by', line, re.IGNORECASE):
+                    addr_lines = [self.re_mfg_key.sub('', line).strip()]
+                    for next_idx in range(i + 1, min(i + 4, len(structured_rows))):
                         nline = " ".join([b['text'] for b in structured_rows[next_idx]]).strip()
-                        if not re.search(r'(?:mrp|net|batch|phone|email)', nline, re.IGNORECASE):
+                        if not re.search(r'(?:mrp|net\s*wt|batch|phone|customer\s*care)', nline, re.IGNORECASE):
                             addr_lines.append(nline)
-                    result['manufacturer'] = ", ".join(addr_lines)
+                    result['manufacturer'] = ", ".join([al for al in addr_lines if al])
                     break
 
-        # Fallback 3: Commodity Name (Top prominent line)
-        if not result['commodityName'] and len(structured_rows) > 0:
-            top_line = " ".join([b['text'] for b in structured_rows[0]]).strip()
-            if not re.search(r'(?:mrp|net|mfd|batch|phone|email|care|rs\.|pvt|ltd)', top_line, re.IGNORECASE) and len(top_line) > 2:
-                result['commodityName'] = top_line
+        # Fallback 3: Commodity Name (Keyword lexicon or Top prominent line)
+        if not result['commodityName']:
+            comm_kw = self.re_commodity_fallback.search(full_text)
+            if comm_kw:
+                result['commodityName'] = comm_kw.group(0).strip().title()
+            elif len(structured_rows) > 0:
+                top_line = " ".join([b['text'] for b in structured_rows[0]]).strip()
+                if not re.search(r'(?:mrp|net|mfd|batch|phone|email|care|rs\.|pvt|ltd|marketed)', top_line, re.IGNORECASE) and len(top_line) > 2:
+                    result['commodityName'] = top_line
 
         # Fallback 4: Unit Sale Price (USP) from full text
         if not result['unitSalePrice']:
@@ -426,8 +438,38 @@ class PackagingLayoutParser:
                 rem = full_text[addr_m.end():].strip().split('\n')[0].strip()
                 if len(rem) > 5:
                     result['productAddress'] = rem
-            elif result['manufacturer'] and (self.re_pincode.search(result['manufacturer']) or re.search(r'(?:sector|plot|industrial|road|street|nagar|ward|village|dist|state)', result['manufacturer'], re.IGNORECASE)):
+            elif result['manufacturer'] and (self.re_pincode.search(result['manufacturer']) or self.re_indian_states.search(result['manufacturer']) or re.search(r'(?:sector|plot|industrial|road|street|nagar|ward|village|dist|state)', result['manufacturer'], re.IGNORECASE)):
                 result['productAddress'] = result['manufacturer']
+
+        # Fallback 6: Country of Origin from full text / state / PIN code
+        if not result['countryOfOrigin']:
+            if re.search(r'\b(india|bharat)\b', full_text, re.IGNORECASE) or self.re_indian_states.search(full_text) or self.re_pincode.search(full_text):
+                result['countryOfOrigin'] = "India"
+
+        # Fallback 7: MRP & Taxes from full text
+        if not result['mrp']:
+            mrp_full = self.re_mrp.search(full_text)
+            if mrp_full:
+                val = mrp_full.group(1).replace(',', '.')
+                try:
+                    result['mrpNumeric'] = float(val)
+                except ValueError:
+                    pass
+                result['mrp'] = f"Rs. {val}"
+                if result['hasInclusiveOfTaxes']:
+                    result['mrp'] += " (Inclusive of all taxes)"
+
+        # Fallback 8: Mfg / Packing Date from full text
+        if not result['mfgDate']:
+            dt_full = self.re_mfg_date.search(full_text)
+            if dt_full:
+                result['mfgDate'] = dt_full.group(1).strip()
+
+        # Fallback 9: Batch No from full text
+        if not result['batchNo']:
+            b_full = self.re_batch.search(full_text)
+            if b_full:
+                result['batchNo'] = b_full.group(1).strip()
 
         # Estimate average numeral font height in mm assuming standard label DPI
         qty_boxes = [b for b in boxes if re.search(r'[0-9]+', b['text'])]

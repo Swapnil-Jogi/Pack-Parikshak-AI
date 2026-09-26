@@ -159,7 +159,7 @@
       <div class="flex items-center gap-2 w-full sm:w-auto">
         <input type="text" id="queueSearchInput" placeholder="<%= t('searchProductPlaceholder') %>" class="form-control form-control-sm text-xs rounded-lg py-1.5">
         <select id="queueStatusFilter" class="form-select form-select-sm text-xs rounded-lg py-1.5">
-          <option value="ALL"><%= t('filterAllStatus') %></option>
+          <option value="ALL">📦 All Total Scanned Products (<%= stats.totalInspections %>)</option>
           <option value="MY_UPLOADS">👤 My Uploads Only</option>
           <option value="COMPLAINTS">🚨 Consumer Complaints (<%= stats.complaintCount || 0 %>)</option>
           <option value="NON_COMPLIANT"><%= t('statusNonCompliant') %></option>

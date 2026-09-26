@@ -6,20 +6,19 @@ const PdfService = require("../services/pdfService");
 // Render Officer Command Hub
 exports.getDashboard = async (req, res) => {
   try {
-    const officerId = req.user ? req.user._id : null;
+    // Show all total scanned products across the system for complete regulatory oversight
+    let inspections = await Inspection.find().sort({ createdAt: -1 });
 
-    // Show only products uploaded by this particular officer, plus products on which citizen complaints are lodged
-    let query = {};
-    if (officerId) {
-      query = {
-        $or: [
-          { user: officerId },
-          { "complaint.isFiled": true }
-        ]
-      };
+    // If database has 0 inspections, auto-seed realistic sample products on the fly
+    if (inspections.length === 0) {
+      try {
+        const { autoSeedIfEmpty } = require("../seed");
+        await autoSeedIfEmpty();
+        inspections = await Inspection.find().sort({ createdAt: -1 });
+      } catch (seedErr) {
+        console.warn("[Officer] Auto-seed check notice:", seedErr.message);
+      }
     }
-
-    let inspections = await Inspection.find(query).sort({ createdAt: -1 });
 
     const totalInspections = inspections.length;
     const compliantCount = inspections.filter((i) => i.complianceStatus === "COMPLIANT").length;

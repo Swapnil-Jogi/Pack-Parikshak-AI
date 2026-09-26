@@ -6,6 +6,7 @@ import json
 import base64
 import io
 import gc
+import cv2
 import numpy as np
 from PIL import Image
 from flask import Flask, request, jsonify

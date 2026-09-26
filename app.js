@@ -88,7 +88,9 @@ app.use(
           "blob:",
           "https://res.cloudinary.com",
           "https://*.cloudinary.com",
-          "https://*.unsplash.com"
+          "https://*.unsplash.com",
+          "https://media.discordapp.net",
+          "https://*.discordapp.net"
         ],
         connectSrc: ["'self'", "https://cdn.jsdelivr.net"],
         objectSrc: ["'none'"],

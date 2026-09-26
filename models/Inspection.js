@@ -150,9 +150,17 @@ const InspectionSchema = new mongoose.Schema(
       filedAt: { type: Date, default: null },
       status: {
         type: String,
-        enum: ["PENDING", "INVESTIGATING", "NOTICE_ISSUED", "RESOLVED", "DISMISSED"],
+        enum: ["PENDING", "CONFIRMED", "INVESTIGATING", "NOTICE_ISSUED", "RESOLVED", "DISMISSED"],
         default: "PENDING"
-      }
+      },
+      viewedByOfficer: { type: Boolean, default: false, index: true },
+      viewedByOfficerAt: { type: Date, default: null },
+      officerViewedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        default: null
+      },
+      officerName: { type: String, default: "" }
     }
   },
   { timestamps: true }

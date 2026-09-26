@@ -103,6 +103,22 @@ exports.getSandbox = async (req, res) => {
       return res.status(404).render("errors/404.ejs", { title: "Inspection Not Found", message: "The requested inspection record could not be found." });
     }
 
+    // When an officer views an inspection on which a consumer complaint was lodged,
+    // mark complaint as CONFIRMED so consumer receives immediate confirmation on their dashboard
+    if (req.user && req.user.role === "officer" && inspection.complaint && inspection.complaint.isFiled) {
+      if (!inspection.complaint.viewedByOfficer || inspection.complaint.status === "PENDING") {
+        inspection.complaint.viewedByOfficer = true;
+        inspection.complaint.viewedByOfficerAt = new Date();
+        inspection.complaint.officerViewedBy = req.user._id;
+        inspection.complaint.officerName = req.user.name || "Enforcement Officer";
+        inspection.complaint.status = "CONFIRMED";
+        if (!inspection.officerReview) inspection.officerReview = {};
+        inspection.officerReview.status = "INVESTIGATING";
+        await inspection.save();
+        console.log(`[Complaint] Marked complaint #${inspection.complaint.complaintNumber} as CONFIRMED (viewed by Officer ${req.user.name})`);
+      }
+    }
+
     res.render("sandbox/inspect.ejs", {
       title: `OCR Sandbox: ${inspection.inspectionNumber} | Pack-Parikshak AI`,
       inspection,
@@ -180,26 +196,11 @@ exports.postUpdateCorrections = async (req, res) => {
 exports.getUserDashboard = async (req, res) => {
   try {
     const isOfficer = Boolean(req.user && req.user.role === "officer");
-    const filter = req.query.filter || "my";
+    // Strictly show ONLY products uploaded by this particular user (consumer or officer)
+    const userId = req.user ? req.user._id : null;
+    const query = { user: userId };
 
-    let query = {};
-    if (req.user) {
-      if (isOfficer && filter === "all") {
-        query = {};
-      } else {
-        query = { user: req.user._id };
-      }
-    }
-
-    let inspections = await Inspection.find(query).sort({ createdAt: -1 }).limit(40);
-
-    // If an officer hasn't uploaded personal scans under this specific account ID yet,
-    // load recent repository scans so they can see images and sample package audits immediately
-    let showingAllFallback = false;
-    if (isOfficer && inspections.length === 0 && filter === "my") {
-      inspections = await Inspection.find().sort({ createdAt: -1 }).limit(30);
-      showingAllFallback = true;
-    }
+    const inspections = await Inspection.find(query).sort({ createdAt: -1 }).limit(50);
 
     const totalScans = inspections.length;
     const compliantCount = inspections.filter((i) => i.complianceStatus === "COMPLIANT").length;
@@ -211,8 +212,8 @@ exports.getUserDashboard = async (req, res) => {
       title: (isOfficer ? "Officer Scans Dashboard" : "Consumer Compliance Portal") + " | Pack-Parikshak AI",
       user: req.user,
       isOfficer,
-      currentFilter: filter,
-      showingAllFallback,
+      currentFilter: "my",
+      showingAllFallback: false,
       inspections,
       stats: {
         totalScans,

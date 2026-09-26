@@ -87,10 +87,15 @@ document.addEventListener("DOMContentLoaded", () => {
       const text = row.innerText.toLowerCase();
       const rowStatus = row.getAttribute("data-status");
       const hasComplaint = row.getAttribute("data-has-complaint") === "true";
+      const isMyUpload = row.getAttribute("data-is-my-upload") === "true";
       const matchesSearch = text.includes(term);
       const matchesStatus =
         status === "ALL" ||
-        (status === "COMPLAINTS" ? hasComplaint : rowStatus === status);
+        (status === "COMPLAINTS"
+          ? hasComplaint
+          : status === "MY_UPLOADS"
+          ? isMyUpload
+          : rowStatus === status);
 
       if (matchesSearch && matchesStatus) {
         row.style.display = "";

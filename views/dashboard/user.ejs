@@ -27,16 +27,6 @@
     </div>
 
     <div class="flex items-center gap-2">
-      <% if (typeof isOfficer !== 'undefined' && isOfficer) { %>
-        <div class="btn-group btn-group-sm shadow-xs" role="group">
-          <a href="/dashboard?filter=my" class="btn btn-sm text-xs font-semibold py-1.5 px-3 <%= (typeof currentFilter === 'undefined' || currentFilter === 'my') ? 'btn-govblue text-white' : 'btn-outline-secondary' %>">
-            My Uploads
-          </a>
-          <a href="/dashboard?filter=all" class="btn btn-sm text-xs font-semibold py-1.5 px-3 <%= (typeof currentFilter !== 'undefined' && currentFilter === 'all') ? 'btn-govblue text-white' : 'btn-outline-secondary' %>">
-            All Repository
-          </a>
-        </div>
-      <% } %>
       <a href="/reports/export/csv" class="btn btn-outline-secondary btn-sm text-xs font-semibold py-2 px-3 shadow-sm">
         <i class="fa-solid fa-file-csv me-1 text-emerald-600"></i> <%= t('exportCsvBtn') %>
       </a>
@@ -45,18 +35,6 @@
       </a>
     </div>
   </div>
-
-  <% if (typeof showingAllFallback !== 'undefined' && showingAllFallback) { %>
-    <div class="bg-blue-50 border-l-4 border-govblue p-3.5 rounded-lg mb-6 flex items-center justify-between text-xs text-slate-700">
-      <div class="flex items-center gap-2">
-        <i class="fa-solid fa-circle-info text-govblue text-sm"></i>
-        <span>No custom uploads yet under your officer account. Showing recent verified commodity scans from the statutory database.</span>
-      </div>
-      <a href="/inspections/new" class="btn btn-xs bg-govblue text-white font-bold py-1 px-2.5 rounded">
-        Upload Your First Scan
-      </a>
-    </div>
-  <% } %>
 
   <!-- Metric KPI Cards -->
   <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
@@ -137,6 +115,19 @@
                         <%= item.productName %>
                       </a>
                       <div class="text-[10px] text-slate-500 mt-0.5"><%= item.brand %></div>
+                      <% if (item.complaint && item.complaint.isFiled) { %>
+                        <div class="mt-1">
+                          <% if (item.complaint.status === 'CONFIRMED' || item.complaint.viewedByOfficer) { %>
+                            <span class="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 px-1.5 py-0.5 rounded shadow-2xs" title="Complaint reviewed & confirmed by Enforcement Officer">
+                              <i class="fa-solid fa-circle-check text-emerald-600"></i> Complaint Confirmed
+                            </span>
+                          <% } else { %>
+                            <span class="inline-flex items-center gap-1 text-[9px] font-bold text-amber-800 bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded shadow-2xs" title="Complaint submitted. Awaiting officer review.">
+                              <i class="fa-solid fa-clock text-amber-600"></i> Complaint Pending
+                            </span>
+                          <% } %>
+                        </div>
+                      <% } %>
                     </div>
                   </div>
                 </td>
@@ -166,9 +157,17 @@
                   </a>
                   <% if (typeof isOfficer === 'undefined' || !isOfficer) { %>
                     <% if (item.complaint && item.complaint.isFiled) { %>
-                      <span class="inline-flex items-center gap-1 px-2 py-1 rounded bg-amber-100 text-amber-800 border border-amber-300 text-[11px] font-bold" title="Complaint #<%= item.complaint.complaintNumber %> filed on <%= new Date(item.complaint.filedAt).toLocaleDateString('en-IN') %>">
-                        <i class="fa-solid fa-flag text-amber-600"></i> Complaint Filed
-                      </span>
+                      <% if (item.complaint.status === 'CONFIRMED' || item.complaint.viewedByOfficer) { %>
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 border border-emerald-300 text-[11px] font-bold shadow-xs" title="Complaint #<%= item.complaint.complaintNumber %> has been viewed and confirmed by Legal Metrology Officer <%= item.complaint.officerName ? '(' + item.complaint.officerName + ')' : '' %>">
+                          <i class="fa-solid fa-circle-check text-emerald-600"></i>
+                          <span>Confirmed</span>
+                        </span>
+                      <% } else { %>
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-100 text-amber-800 border border-amber-300 text-[11px] font-bold shadow-xs" title="Complaint #<%= item.complaint.complaintNumber %> submitted on <%= new Date(item.complaint.filedAt || Date.now()).toLocaleDateString('en-IN') %>. Awaiting officer review.">
+                          <i class="fa-solid fa-clock text-amber-600"></i>
+                          <span>Complaint Filed</span>
+                        </span>
+                      <% } %>
                     <% } else { %>
                       <button type="button" class="btn btn-outline-warning text-amber-600 border-amber-400 hover:bg-amber-500 hover:text-white btn-sm text-[11px] font-bold py-1 px-2.5 shadow-xs btn-raise-complaint btn-open-complaint-modal"
                         data-id="<%= item._id %>"

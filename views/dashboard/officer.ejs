@@ -160,6 +160,7 @@
         <input type="text" id="queueSearchInput" placeholder="<%= t('searchProductPlaceholder') %>" class="form-control form-control-sm text-xs rounded-lg py-1.5">
         <select id="queueStatusFilter" class="form-select form-select-sm text-xs rounded-lg py-1.5">
           <option value="ALL"><%= t('filterAllStatus') %></option>
+          <option value="MY_UPLOADS">👤 My Uploads Only</option>
           <option value="COMPLAINTS">🚨 Consumer Complaints (<%= stats.complaintCount || 0 %>)</option>
           <option value="NON_COMPLIANT"><%= t('statusNonCompliant') %></option>
           <option value="WARNING"><%= t('statusWarning') %></option>
@@ -183,16 +184,21 @@
         </thead>
         <tbody class="divide-y divide-slate-100">
           <% queue.forEach(item => { %>
-            <tr class="queue-row" data-status="<%= item.complianceStatus %>" data-has-complaint="<%= (item.complaint && item.complaint.isFiled) ? 'true' : 'false' %>">
+            <tr class="queue-row" data-status="<%= item.complianceStatus %>" data-has-complaint="<%= (item.complaint && item.complaint.isFiled) ? 'true' : 'false' %>" data-is-my-upload="<%= (item.user && user && item.user.toString() === user._id.toString()) ? 'true' : 'false' %>">
               <td class="ps-4 font-mono font-bold text-slate-700">
                 <a href="/inspections/<%= item._id %>/sandbox" class="hover:text-govblue hover:underline">
                   <%= item.inspectionNumber %>
                 </a>
                 <% if (item.complaint && item.complaint.isFiled) { %>
-                  <div class="mt-1">
+                  <div class="mt-1 flex flex-col gap-0.5">
                     <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-purple-100 text-purple-800 border border-purple-200" title="Consumer Statutory Grievance Lodged">
                       <i class="fa-solid fa-bullhorn text-purple-600"></i> <%= item.complaint.complaintNumber %>
                     </span>
+                    <% if (item.complaint.status === 'CONFIRMED' || item.complaint.viewedByOfficer) { %>
+                      <span class="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1 py-0.2 rounded border border-emerald-200">
+                        <i class="fa-solid fa-circle-check text-emerald-600"></i> Confirmed
+                      </span>
+                    <% } %>
                   </div>
                 <% } %>
               </td>

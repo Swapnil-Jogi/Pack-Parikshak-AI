@@ -86,8 +86,11 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll(".queue-row").forEach((row) => {
       const text = row.innerText.toLowerCase();
       const rowStatus = row.getAttribute("data-status");
+      const hasComplaint = row.getAttribute("data-has-complaint") === "true";
       const matchesSearch = text.includes(term);
-      const matchesStatus = status === "ALL" || rowStatus === status;
+      const matchesStatus =
+        status === "ALL" ||
+        (status === "COMPLAINTS" ? hasComplaint : rowStatus === status);
 
       if (matchesSearch && matchesStatus) {
         row.style.display = "";

@@ -157,13 +157,30 @@
                   </span>
                 </td>
                 <td class="text-slate-500"><%= new Date(item.createdAt).toLocaleDateString('en-IN') %></td>
-                <td class="pe-4 text-end space-x-1">
+                <td class="pe-4 text-end space-x-1 whitespace-nowrap">
                   <a href="/inspections/<%= item._id %>/sandbox" class="btn btn-outline-primary btn-sm text-[11px] py-1 px-2.5" title="<%= t('btnSandbox') %>">
                     <i class="fa-solid fa-eye me-1"></i> <%= t('btnSandbox') %>
                   </a>
                   <a href="/reports/<%= item._id %>/pdf" class="btn btn-outline-danger btn-sm text-[11px] py-1 px-2.5" title="<%= t('btnDownloadPdf') %>">
                     <i class="fa-solid fa-file-pdf"></i>
                   </a>
+                  <% if (typeof isOfficer === 'undefined' || !isOfficer) { %>
+                    <% if (item.complaint && item.complaint.isFiled) { %>
+                      <span class="inline-flex items-center gap-1 px-2 py-1 rounded bg-amber-100 text-amber-800 border border-amber-300 text-[11px] font-bold" title="Complaint #<%= item.complaint.complaintNumber %> filed on <%= new Date(item.complaint.filedAt).toLocaleDateString('en-IN') %>">
+                        <i class="fa-solid fa-flag text-amber-600"></i> Complaint Filed
+                      </span>
+                    <% } else { %>
+                      <button type="button" class="btn btn-outline-warning text-amber-600 border-amber-400 hover:bg-amber-500 hover:text-white btn-sm text-[11px] font-bold py-1 px-2.5 shadow-xs btn-raise-complaint btn-open-complaint-modal"
+                        data-id="<%= item._id %>"
+                        data-inspection-number="<%= item.inspectionNumber %>"
+                        data-product-name="<%= item.productName %>"
+                        data-status="<%= item.complianceStatus %>"
+                        data-violations="<%= (item.violationsList || []).join('; ') %>"
+                        title="Raise official statutory complaint with Legal Metrology Enforcement">
+                        <i class="fa-solid fa-bullhorn me-1"></i> Raise Complaint
+                      </button>
+                    <% } %>
+                  <% } %>
                 </td>
               </tr>
             <% }) %>
@@ -173,6 +190,141 @@
     </div>
   </div>
 
+  <!-- Raise Consumer Complaint Modal -->
+  <% if (typeof isOfficer === 'undefined' || !isOfficer) { %>
+    <div class="modal fade" id="raiseComplaintModal" tabindex="-1" aria-labelledby="raiseComplaintModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+          <form id="raiseComplaintForm" method="POST" action="">
+            <div class="modal-header bg-slate-900 text-white border-b border-slate-800 py-3 px-4">
+              <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center text-xs">
+                  <i class="fa-solid fa-bullhorn"></i>
+                </div>
+                <div>
+                  <h5 class="modal-title text-sm font-extrabold text-white" id="raiseComplaintModalLabel">
+                    Raise Statutory Packaging Complaint
+                  </h5>
+                  <div class="text-[10px] text-slate-400">Legal Metrology Packaged Commodities Redressal</div>
+                </div>
+              </div>
+              <button type="button" class="btn-close btn-close-white text-xs" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <div class="modal-body p-4 text-xs space-y-3">
+              <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-amber-900">
+                <div class="font-bold flex items-center gap-1.5 text-xs text-amber-800">
+                  <i class="fa-solid fa-shield-halved text-amber-600"></i>
+                  <span id="complaintProductName">Product Name</span>
+                </div>
+                <div class="text-[11px] text-slate-600 mt-1 flex items-center justify-between">
+                  <span>Inspection ID: <strong id="complaintInspectionNumber" class="font-mono text-slate-800">-</strong></span>
+                  <span id="complaintStatusBadge" class="badge bg-red-100 text-red-800 border border-red-200">Non-Compliant</span>
+                </div>
+                <div id="complaintViolationsWrap" class="mt-2 text-[10px] text-red-700 bg-red-50/60 p-2 rounded border border-red-100 hidden">
+                  <strong>Detected Violations:</strong> <span id="complaintViolationsText">-</span>
+                </div>
+              </div>
+
+              <div>
+                <label for="complaintReason" class="form-label font-bold text-slate-700 mb-1">
+                  Primary Ground of Complaint <span class="text-red-500">*</span>
+                </label>
+                <select id="complaintReason" name="reason" class="form-select form-select-sm text-xs rounded-lg border-slate-300" required>
+                  <option value="Misleading / Overcharging MRP (Rule 6(1)(e))">Misleading / Overcharging MRP (Rule 6(1)(e))</option>
+                  <option value="Illegal Unit Symbol / Non-standard Net Quantity (Rule 13)">Illegal Unit Symbol / Non-standard Net Quantity (Rule 13)</option>
+                  <option value="Missing or Incomplete Manufacturer / Origin Address (Rule 6(1)(a) & (aa))">Missing or Incomplete Manufacturer / Origin Address (Rule 6(1)(a) & (aa))</option>
+                  <option value="Missing Month & Year of Manufacture / Expiry (Rule 6(1)(d))">Missing Month & Year of Manufacture / Expiry (Rule 6(1)(d))</option>
+                  <option value="Missing Consumer Care Grievance Redressal (Rule 6(1)(n))">Missing Consumer Care Grievance Redressal (Rule 6(1)(n))</option>
+                  <option value="Defective / Counterfeit Packaging">Defective / Counterfeit Packaging</option>
+                  <option value="Other Deceptive Packaging Practice">Other Deceptive Packaging Practice</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="complaintPhone" class="form-label font-bold text-slate-700 mb-1">
+                  Contact Phone Number (Optional)
+                </label>
+                <input type="tel" id="complaintPhone" name="phone" placeholder="e.g. +91 98765 43210" class="form-control form-control-sm text-xs rounded-lg border-slate-300">
+                <span class="text-[10px] text-slate-500">For enforcement officer enquiry if verification is required.</span>
+              </div>
+
+              <div>
+                <label for="complaintDescription" class="form-label font-bold text-slate-700 mb-1">
+                  Grievance Details & Specific Observations <span class="text-red-500">*</span>
+                </label>
+                <textarea id="complaintDescription" name="description" rows="3" class="form-control form-control-sm text-xs rounded-lg border-slate-300" placeholder="Describe the packaging violation observed (e.g. overcharging above printed MRP, smudged manufacturer address, non-standard weight)..." required></textarea>
+              </div>
+
+              <div class="text-[10px] text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                <i class="fa-solid fa-circle-info text-govblue me-1"></i>
+                By submitting this complaint, you formally request inspection under the Legal Metrology Act, 2009. False declarations may be subject to review.
+              </div>
+            </div>
+
+            <div class="modal-footer bg-slate-50 border-t border-slate-200 py-2.5 px-4 flex items-center justify-between">
+              <button type="button" class="btn btn-outline-secondary btn-sm text-xs font-semibold py-1.5 px-3 rounded-lg" data-bs-dismiss="modal">
+                Cancel
+              </button>
+              <button type="submit" class="btn bg-amber-500 hover:bg-amber-600 text-slate-950 btn-sm text-xs font-bold py-1.5 px-4 rounded-lg shadow-sm flex items-center gap-1.5">
+                <i class="fa-solid fa-paper-plane"></i> Submit Official Complaint
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        const modalEl = document.getElementById('raiseComplaintModal');
+        if (!modalEl) return;
+        const modalInstance = new bootstrap.Modal(modalEl);
+        const formEl = document.getElementById('raiseComplaintForm');
+        const prodNameEl = document.getElementById('complaintProductName');
+        const inspNumEl = document.getElementById('complaintInspectionNumber');
+        const violWrapEl = document.getElementById('complaintViolationsWrap');
+        const violTextEl = document.getElementById('complaintViolationsText');
+        const statusBadgeEl = document.getElementById('complaintStatusBadge');
+
+        document.querySelectorAll('.btn-raise-complaint, .btn-open-complaint-modal').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            const inspId = btn.getAttribute('data-id');
+            const inspNumber = btn.getAttribute('data-inspection-number');
+            const prodName = btn.getAttribute('data-product-name');
+            const status = btn.getAttribute('data-status');
+            const violations = btn.getAttribute('data-violations');
+
+            formEl.action = '/inspections/' + inspId + '/complaint';
+            prodNameEl.textContent = prodName || 'Packaged Commodity';
+            inspNumEl.textContent = inspNumber || '-';
+
+            if (status === 'COMPLIANT') {
+              statusBadgeEl.className = 'badge bg-emerald-100 text-emerald-800 border border-emerald-200';
+              statusBadgeEl.textContent = 'Compliant';
+            } else if (status === 'WARNING') {
+              statusBadgeEl.className = 'badge bg-amber-100 text-amber-800 border border-amber-200';
+              statusBadgeEl.textContent = 'Warning Flagged';
+            } else {
+              statusBadgeEl.className = 'badge bg-red-100 text-red-800 border border-red-200';
+              statusBadgeEl.textContent = 'Non-Compliant';
+            }
+
+            if (violations && violations.trim().length > 0) {
+              violTextEl.textContent = violations;
+              violWrapEl.classList.remove('hidden');
+            } else {
+              violWrapEl.classList.add('hidden');
+            }
+
+            modalInstance.show();
+          });
+        });
+      });
+    </script>
+  <% } %>
+
 </main>
 
 <%- include('../partials/footer') %>
+

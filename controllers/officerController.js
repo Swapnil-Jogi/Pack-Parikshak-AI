@@ -23,6 +23,7 @@ exports.getDashboard = async (req, res) => {
     const compliantCount = inspections.filter((i) => i.complianceStatus === "COMPLIANT").length;
     const warningCount = inspections.filter((i) => i.complianceStatus === "WARNING").length;
     const violationCount = inspections.filter((i) => i.complianceStatus === "NON_COMPLIANT").length;
+    const complaintCount = inspections.filter((i) => i.complaint && i.complaint.isFiled).length;
 
     // Top violations breakdown
     const violationTally = {
@@ -93,6 +94,7 @@ exports.getDashboard = async (req, res) => {
         compliantCount,
         warningCount,
         violationCount,
+        complaintCount,
         totalFines,
         complianceRate: totalInspections > 0 ? Math.round((compliantCount / totalInspections) * 100) : 100
       },

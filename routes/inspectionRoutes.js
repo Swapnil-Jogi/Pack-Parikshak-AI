@@ -10,8 +10,9 @@ router.post("/inspections/upload", ensureAuthenticated, upload.single("image"), 
 router.get("/inspections/:id/sandbox", inspectionController.getSandbox);
 router.post("/inspections/:id/corrections", validateCorrections, inspectionController.postUpdateCorrections);
 
-// User / Consumer Dashboard
+// User / Consumer Dashboard & Complaints
 router.get("/dashboard", ensureAuthenticated, inspectionController.getUserDashboard);
+router.post("/inspections/:id/complaint", ensureAuthenticated, inspectionController.postRaiseComplaint);
 
 module.exports = router;
 

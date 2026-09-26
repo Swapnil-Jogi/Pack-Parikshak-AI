@@ -228,3 +228,78 @@ exports.getUserDashboard = async (req, res) => {
   }
 };
 
+// Consumer Raise Complaint against Packaged Commodity
+exports.postRaiseComplaint = async (req, res) => {
+  try {
+    const inspectionId = req.params.id;
+
+    // Enforce that officers cannot raise consumer complaints
+    if (req.user && req.user.role === "officer") {
+      req.flash("error_msg", "Officers cannot file consumer complaints. Use Officer Notice issuance tools.");
+      return res.redirect("/dashboard");
+    }
+
+    const inspection = await Inspection.findById(inspectionId);
+    if (!inspection) {
+      req.flash("error_msg", "Inspection record not found.");
+      return res.redirect("/dashboard");
+    }
+
+    // Check if complaint is already filed
+    if (inspection.complaint && inspection.complaint.isFiled) {
+      req.flash("error_msg", `A complaint has already been submitted for this package (Tracking #${inspection.complaint.complaintNumber}).`);
+      return res.redirect("/dashboard");
+    }
+
+    // Generate tracking number CMP-YYYYMMDD-XXXX
+    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+    const rand = Math.floor(1000 + Math.random() * 9000);
+    const complaintNumber = `CMP-${dateStr}-${rand}`;
+
+    const reason = (req.body.reason || "Statutory Legal Metrology Non-Compliance").trim();
+    const description = (req.body.description || "Consumer reported packaged commodity non-compliance.").trim();
+    const phone = (req.body.phone || (req.user ? req.user.phone : "") || "").trim();
+
+    inspection.complaint = {
+      isFiled: true,
+      complaintNumber,
+      filedBy: req.user ? req.user._id : null,
+      consumerName: req.user ? req.user.name : "Consumer",
+      consumerEmail: req.user ? req.user.email : "consumer@citizen.gov.in",
+      consumerPhone: phone,
+      reason,
+      description,
+      filedAt: new Date(),
+      status: "PENDING"
+    };
+
+    if (!inspection.officerReview) {
+      inspection.officerReview = {};
+    }
+    inspection.officerReview.status = "INVESTIGATING";
+
+    await inspection.save();
+
+    console.log(`[Complaint] Lodged new complaint #${complaintNumber} for inspection ${inspection.inspectionNumber}`);
+
+    if (req.xhr || (req.headers["accept"] && req.headers["accept"].includes("json"))) {
+      return res.json({
+        success: true,
+        message: `Complaint #${complaintNumber} successfully lodged with Legal Metrology Enforcement Division!`,
+        complaint: inspection.complaint
+      });
+    }
+
+    req.flash("success_msg", `Complaint #${complaintNumber} successfully lodged! An enforcement officer has been alerted for priority inspection.`);
+    return res.redirect("/dashboard");
+  } catch (err) {
+    console.error("[Inspection] Error raising complaint:", err);
+    if (req.xhr || (req.headers["accept"] && req.headers["accept"].includes("json"))) {
+      return res.status(500).json({ success: false, error: err.message });
+    }
+    req.flash("error_msg", "Failed to submit complaint: " + err.message);
+    res.redirect("/dashboard");
+  }
+};
+
+

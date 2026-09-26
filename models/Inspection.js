@@ -133,7 +133,27 @@ const InspectionSchema = new mongoose.Schema(
         type: mongoose.Schema.Types.ObjectId,
         ref: "Notice"
       }
-    ]
+    ],
+    complaint: {
+      isFiled: { type: Boolean, default: false, index: true },
+      complaintNumber: { type: String, default: "" },
+      filedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        default: null
+      },
+      consumerName: { type: String, default: "" },
+      consumerEmail: { type: String, default: "" },
+      consumerPhone: { type: String, default: "" },
+      reason: { type: String, default: "" },
+      description: { type: String, default: "" },
+      filedAt: { type: Date, default: null },
+      status: {
+        type: String,
+        enum: ["PENDING", "INVESTIGATING", "NOTICE_ISSUED", "RESOLVED", "DISMISSED"],
+        default: "PENDING"
+      }
+    }
   },
   { timestamps: true }
 );

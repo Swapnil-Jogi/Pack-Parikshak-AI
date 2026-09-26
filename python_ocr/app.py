@@ -26,19 +26,19 @@ try:
     # Disabling angle classifier saves ~60MB RAM by preventing cls ONNX model loading
     ocr_engine = RapidOCR(
         text_score=0.22,
-        use_angle_cls=True
+        use_angle_cls=False
     )
-    # Tune detector parameters for packaging labels & cap max side length to 1100px
+    # Tune detector parameters for packaging labels & cap max side length to 960px
     if hasattr(ocr_engine, 'text_detector'):
         if hasattr(ocr_engine.text_detector, 'preprocess_op') and len(ocr_engine.text_detector.preprocess_op) > 0:
-            ocr_engine.text_detector.preprocess_op[0].limit_side_len = 1100
+            ocr_engine.text_detector.preprocess_op[0].limit_side_len = 960
             ocr_engine.text_detector.preprocess_op[0].limit_type = 'max'
         if hasattr(ocr_engine.text_detector, 'postprocess_op'):
             ocr_engine.text_detector.postprocess_op.unclip_ratio = 2.0
             ocr_engine.text_detector.postprocess_op.box_thresh = 0.35
             ocr_engine.text_detector.postprocess_op.max_candidates = 1000
     layout_parser = PackagingLayoutParser()
-    print("[Python-OCR] High-precision low-memory PaddleOCR Engine initialized and ready (1100px profile + auto-orient).", flush=True)
+    print("[Python-OCR] High-precision low-memory PaddleOCR Engine initialized and ready (960px profile + auto-orient).", flush=True)
 
     # Pre-warm detector and recognizer ONNX graphs with a tiny text image
     try:

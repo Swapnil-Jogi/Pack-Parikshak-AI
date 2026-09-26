@@ -38,23 +38,23 @@ class PackagingLayoutParser:
             r'(?:use\s*by|best\s*before|exp\.?|expiry\s*(?:date)?|b\.?b\.?)\s*[:=-]?\s*([0-9]{1,2}[\/\.-][0-9]{2,4}|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*[\s\.,\'-]+[0-9]{2,4}|[0-9]+\s*months?(?:\s*from\s*(?:mfg|pkd))?)',
             re.IGNORECASE
         )
-        self.re_batch = re.compile(r'(?:b\.?\s*n[oa]\.?|batch\s*(?:n[oa]\.?|code)|lot\s*(?:n[oa]\.?|code))\s*[:=-]?\s*([a-zA-Z0-9\-\/]+)|\b([A-Z]{1,3}[0-9]{4,8})\b', re.IGNORECASE)
+        self.re_batch = re.compile(r'(?:b\.?\s*n[oa]\.?|batch\s*(?:n[oa]\.?|code|to)|lot\s*(?:n[oa]\.?|code))\s*[:=-]?\s*([a-zA-Z0-9\-\/]+)|\b([A-Z]{1,3}[0-9]{4,8})\b', re.IGNORECASE)
         self.re_origin = re.compile(r'(?:coun?tr?y\s*of\s*origi?n?c?|made\s*in|product\s*of|origi?n?c?)\s*[:=-]?\s*([a-zA-Z\s]{2,25})', re.IGNORECASE)
         self.re_phone = re.compile(r'(?:(?:tel|phone|ph|call|toll\s*free|care\s*no|helpline)\s*[:=-]?\s*)?(\+?91[\-\s]?[6-9][0-9]{9}|1800[\-\s]?[0-9]{3}[\-\s]?[0-9]{3,4}|[6-9][0-9]{9})', re.IGNORECASE)
         self.re_email = re.compile(r'([a-zA-Z0-9_.+-]+(?:\s*@\s*|\s*g\s*|\s*©\s*)[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)')
         self.re_mfg_key = re.compile(r'(?:mfd\.?\s*by|manufactured\s*(?:&|and)?\s*(?:packed\s*)?by|mfg\s*by|packed\s*by|pkd\s*by|marketed\s*by|mktd\s*by|imported\s*by|maad(?:y|by|ed)?|made\s*by)\s*[:=-]?', re.IGNORECASE)
         self.re_care_key = re.compile(r'(?:customer\s*care|consumer\s*care|for\s*complaints|in\s*case\s*of\s*feedback|consumer\s*feedback)\s*[:=-]?', re.IGNORECASE)
-        self.re_commodity_key = re.compile(r'(?:commodity(?:\s*name)?|product(?:\s*name)?|item(?:\s*name)?|name\s*of\s*commodity|generic\s*name)\s*[:=-]?', re.IGNORECASE)
+        self.re_commodity_key = re.compile(r'(?:commodity(?:\s*name)?|product\s*name|item\s*name|name\s*of\s*(?:commodity|product)|generic\s*name)\s*[:=-]|\b(?:commodity|generic\s*name)\s*[:=-]', re.IGNORECASE)
         self.re_commodity_fallback = re.compile(
-            r'\b(perfumed\s*ta[li]c|talcu[mn]\s*pow[do]?[we]r|ta[li]c|talcum\s*powder|jasmine|wheat\s*(?:atta|flour)|atta|flour|potato\s*chips|chips|biscuits?|cookies?|soap|detergent|shampoo|edible\s*oil|mustard\s*oil|hair\s*oil|sunflower\s*oil|refined\s*oil|tea|coffee|toothpaste|tooth\s*powder|face\s*wash|cream|lotion|spices|masala|salt|sugar|honey|ghee|butter|paneer|milk|mineral\s*water|packaged\s*drinking\s*water)\b',
+            r'\b(body\s*loti[eo]n|lotion|winter\s*care|wintercare|moisturi[sz]er|cream|perfumed\s*ta[li]c|talcu[mn]\s*pow[do]?[we]r|ta[li]c|talcum\s*powder|jasmine|wheat\s*(?:atta|flour)|atta|flour|potato\s*chips|chips|biscuits?|cookies?|soap|detergent|shampoo|edible\s*oil|mustard\s*oil|hair\s*oil|sunflower\s*oil|refined\s*oil|tea|coffee|toothpaste|tooth\s*powder|face\s*wash|spices|masala|salt|sugar|honey|ghee|butter|paneer|milk|mineral\s*water|packaged\s*drinking\s*water)\b',
             re.IGNORECASE
         )
         self.re_indian_states = re.compile(
-            r'\b(maharashtra|haryana|gujarat|karnataka|delhi|punjab|rajasthan|uttar\s*pradesh|madhya\s*pradesh|tamil\s*nadu|kerala|andhra\s*pradesh|telangana|west\s*bengal|bihar|odisha|assam|goa|himachal\s*pradesh|uttarakhand)\b',
+            r'\b(haridwar|uttarakhand|dehradun|solan|baddi|daman|silvassa|karnal|maharashtra|haryana|gujarat|karnataka|delhi|punjab|rajasthan|uttar\s*pradesh|madhya\s*pradesh|tamil\s*nadu|kerala|andhra\s*pradesh|telangana|west\s*bengal|bihar|odisha|assam|goa|himachal\s*pradesh)\b',
             re.IGNORECASE
         )
         self.re_pincode = re.compile(r'\b[1-9][0-9]{2}\s?[0-9]{1,3}\b')
-        self.re_company = re.compile(r'\b(?:pvt\.?\s*ltd|ltd|llp|industries|foods|agro|products|enterprises|works|mills|beverages|foundation|ayurveda|laboratories|pharma)\b', re.IGNORECASE)
+        self.re_company = re.compile(r'\b(?:pvt\.?\s*ltd|ltd|llp|limited|industries|foods|agro|herbal(?:\s*products)?|enterprises|works|mills|beverages|laboratories|pharma(?:ceuticals)?)\b', re.IGNORECASE)
         self.re_usp = re.compile(
             r'(?:u\.?\s*s\.?\s*p\.?|un[it]*\s*sal?e?\s*pri[ce]*|unique\s*sell(?:ing)?\s*price|unit\s*price|unt\s*saleprie)\s*[:=-]?\s*(?:₹|rs\.?|inr)?\s*([0-9]+(?:[\.,][0-9]{1,3})?)\s*(?:\/|\s*per\s*|\s*)\s*([a-zA-Z0-9]+(?:[ \t]+[a-zA-Z]+)?)',
             re.IGNORECASE
@@ -200,6 +200,16 @@ class PackagingLayoutParser:
         phone_m = self.re_phone.search(full_text)
         if phone_m:
             result['customerCarePhone'] = phone_m.group(1).strip()
+
+        web_m = re.search(r'(?:website|web|portal|site|url)\s*[:=-]?\s*([a-zA-Z0-9-.]+\.[a-zA-Z]{2,}(?:\/[^\s]*)?)', full_text, re.IGNORECASE)
+        if web_m:
+            web_val = web_m.group(1).strip()
+            if not result['customerCareAddress']:
+                result['customerCareAddress'] = f"Website: {web_val}"
+            elif "website" not in result['customerCareAddress'].lower():
+                result['customerCareAddress'] += f", Website: {web_val}"
+            if not result['customerCareEmail'] and "@" in web_val:
+                result['customerCareEmail'] = web_val
 
         # Scan row-by-row for Left-Key Right-Value and contiguous blocks
         for i, row in enumerate(structured_rows):
@@ -422,12 +432,16 @@ class PackagingLayoutParser:
                     result['commodityName'] = "Jasmine Perfumed Talc"
                 elif 'flour' in raw_match or 'atta' in raw_match:
                     result['commodityName'] = "Wheat Flour"
+                elif 'lotion' in raw_match or 'lotien' in raw_match or 'winter' in raw_match:
+                    result['commodityName'] = "Winter Care Body Lotion" if ("winter" in full_text.lower() or "wintercare" in full_text.lower()) else "Body Lotion"
+                elif 'cream' in raw_match or 'moisturi' in raw_match:
+                    result['commodityName'] = "Moisturizing Cream"
                 else:
                     result['commodityName'] = comm_kw.group(0).strip().title()
             elif len(structured_rows) > 0:
                 for r in structured_rows[:4]:
                     cand = " ".join([b['text'] for b in r]).strip()
-                    if len(cand) >= 3 and not re.search(r'(?:mrp|net|mfd|batch|phone|email|care|rs\.|pvt|ltd|marketed|date|exp|fssai)', cand, re.IGNORECASE) and re.search(r'[a-zA-Z]{3,}', cand):
+                    if len(cand) >= 3 and not re.search(r'(?:mrp|net|mfd|batch|phone|email|care|rs\.|pvt|ltd|marketed|date|exp|fssai|products)', cand, re.IGNORECASE) and re.search(r'[a-zA-Z]{3,}', cand):
                         result['commodityName'] = cand
                         break
 

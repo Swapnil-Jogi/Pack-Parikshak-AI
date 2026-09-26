@@ -35,12 +35,12 @@ class OcrService {
       throw new Error(`Image file not found: ${imagePath}`);
     }
 
-    // 2. Try HTTP microservice first (with 60-second cloud timeout)
+    // 2. Try HTTP microservice first (with generous 120-second cloud container timeout)
     try {
       const response = await axios.post(
         this.microserviceUrl,
         { image_path: imagePath },
-        { timeout: 60000, headers: { "Content-Type": "application/json" } }
+        { timeout: 120000, headers: { "Content-Type": "application/json" } }
       );
 
       if (response.data && response.data.success) {

@@ -22,10 +22,10 @@ def run_standalone(image_path):
 
         from image_preprocessor import ImagePreprocessor
 
-        ocr = RapidOCR(text_score=0.22, use_angle_cls=True)
+        ocr = RapidOCR(text_score=0.22, use_angle_cls=False)
         if hasattr(ocr, 'text_detector'):
             if hasattr(ocr.text_detector, 'preprocess_op') and len(ocr.text_detector.preprocess_op) > 0:
-                ocr.text_detector.preprocess_op[0].limit_side_len = 1100
+                ocr.text_detector.preprocess_op[0].limit_side_len = 960
                 ocr.text_detector.preprocess_op[0].limit_type = 'max'
             if hasattr(ocr.text_detector, 'postprocess_op'):
                 ocr.text_detector.postprocess_op.unclip_ratio = 2.0

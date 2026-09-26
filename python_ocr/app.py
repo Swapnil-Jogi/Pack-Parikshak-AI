@@ -77,17 +77,17 @@ def process_image(img_pil, image_path=None):
 
         upright_h, upright_w = aligned_bgr.shape[:2]
 
-        # 2. Advanced Preprocessing: CLAHE contrast, gentle scale, unsharp masking
+        # 2. Advanced Preprocessing: memory-safe scaling for large images
         print("[Python-OCR Process] Preprocessing image...", flush=True)
-        enhanced_rgb, scale = ImagePreprocessor.preprocess_for_ocr(aligned_bgr)
+        processed_bgr, scale = ImagePreprocessor.preprocess_for_ocr(aligned_bgr)
         del aligned_bgr, img_bgr
-        print(f"[Python-OCR Process] Preprocessing complete: shape={enhanced_rgb.shape}, scale={scale:.3f}", flush=True)
+        print(f"[Python-OCR Process] Preprocessing complete: shape={processed_bgr.shape}, scale={scale:.3f}", flush=True)
 
         # 3. Text Inference via Universal Callable
         t0 = time.time()
         print("[Python-OCR Process] Running OCR engine inference...", flush=True)
-        ocr_result, elapse = ocr_engine(enhanced_rgb)
-        del enhanced_rgb
+        ocr_result, elapse = ocr_engine(processed_bgr)
+        del processed_bgr
         elapse_str = f"{elapse:.2f}s" if isinstance(elapse, (int, float)) else str(elapse)
         print(f"[Python-OCR Process] OCR inference finished in {elapse_str}", flush=True)
 

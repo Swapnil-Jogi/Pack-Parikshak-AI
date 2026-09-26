@@ -85,52 +85,26 @@ class ImagePreprocessor:
     @staticmethod
     def preprocess_for_ocr(bgr_img):
         """
-        Enhances the input image for maximum text detection and recognition accuracy.
-        Scales up to 1100px max dimension for fine packaging typography.
+        Prepares the input packaging image for maximum OCR detection and recognition accuracy.
+        - Automatically caps ultra-high-resolution smartphone photos (>1200px) down to 1200px max dimension,
+          conserving RAM while preserving high typographical clarity.
+        - Retains clean native color channels without artificial blurring, CLAHE, or unsharp masks
+          which distort DBNet edge detection features.
         Returns:
-            enhanced_rgb (numpy.ndarray): Preprocessed RGB image ready for OCR engine
+            processed_bgr (numpy.ndarray): Preprocessed image ready for OCR engine
             scale (float): Scale factor applied during preprocessing
         """
         h, w = bgr_img.shape[:2]
         max_dim = float(max(h, w))
         scale = 1.0
 
-        # High-Precision Packaging Resolution:
-        # Scale down very large images (> 1100px) or upscale very small images (< 480px)
-        # 1100px allows small 8pt packaging fonts to be cleanly resolved while using ~105MB RAM.
-        if max_dim > 1100.0:
-            scale = 1100.0 / max_dim
+        if max_dim > 1200.0:
+            scale = 1200.0 / max_dim
             new_w = int(round(w * scale))
             new_h = int(round(h * scale))
             bgr = cv2.resize(bgr_img, (new_w, new_h), interpolation=cv2.INTER_AREA)
-        elif max_dim < 480.0:
-            scale = 480.0 / max_dim
-            new_w = int(round(w * scale))
-            new_h = int(round(h * scale))
-            bgr = cv2.resize(bgr_img, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
-        else:
-            bgr = bgr_img
+            return bgr, scale
 
-        # 2. Local Luminance Contrast Enhancement via CLAHE in LAB Color Space
-        # Brings out faint, colored, or low-contrast packaging declarations
-        lab = cv2.cvtColor(bgr, cv2.COLOR_BGR2LAB)
-        l, a, b_chan = cv2.split(lab)
-        clahe = cv2.createCLAHE(clipLimit=2.2, tileGridSize=(8, 8))
-        l_clahe = clahe.apply(l)
-
-        enhanced_lab = cv2.merge((l_clahe, a, b_chan))
-        enhanced_bgr = cv2.cvtColor(enhanced_lab, cv2.COLOR_LAB2BGR)
-        del lab, l, a, b_chan, l_clahe, enhanced_lab
-
-        # 3. Gentle Unsharp Masking for Sharp Character Boundaries
-        gaussian = cv2.GaussianBlur(enhanced_bgr, (0, 0), sigmaX=1.8)
-        sharpened_bgr = cv2.addWeighted(enhanced_bgr, 1.3, gaussian, -0.3, 0)
-        del enhanced_bgr, gaussian
-
-        # Convert back to RGB for RapidOCR / PaddleOCR
-        final_rgb = cv2.cvtColor(sharpened_bgr, cv2.COLOR_BGR2RGB)
-        del sharpened_bgr
-
-        return final_rgb, scale
+        return bgr_img, 1.0
 
 

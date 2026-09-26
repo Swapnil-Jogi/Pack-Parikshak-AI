@@ -44,9 +44,9 @@ def run_standalone(image_path):
         upright_h, upright_w = aligned_bgr.shape[:2]
 
         # 2. Preprocess
-        enhanced_rgb, scale = ImagePreprocessor.preprocess_for_ocr(aligned_bgr)
-        ocr_result, _ = ocr(enhanced_rgb)
-        del enhanced_rgb, aligned_bgr, img_bgr
+        processed_bgr, scale = ImagePreprocessor.preprocess_for_ocr(aligned_bgr)
+        ocr_result, _ = ocr(processed_bgr)
+        del processed_bgr, aligned_bgr, img_bgr
 
         raw_boxes = []
         items = []

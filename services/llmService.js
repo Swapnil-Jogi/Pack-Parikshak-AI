@@ -21,7 +21,12 @@ class LlmService {
   }
 
   getPreferredModel() {
-    return (process.env.GEMINI_MODEL || "gemini-3.1-flash-lite").trim();
+    let m = (process.env.GEMINI_MODEL || "gemini-3.1-flash-lite").trim();
+    // Guard against retired 1.5, 2.0, or 8b models that return 404
+    if (m.includes("1.5") || m.includes("2.0") || m.includes("8b") || !m) {
+      m = "gemini-3.1-flash-lite";
+    }
+    return m;
   }
 
   getOptimizationMode() {
@@ -125,9 +130,13 @@ class LlmService {
       throw new Error("QUOTA_EXHAUSTED_TODAY");
     }
 
-    const candidateModels = preferredModel
-      ? [preferredModel, ...this.models.filter((m) => m !== preferredModel)]
-      : this.models;
+    // Filter out any deprecated models (1.5, 2.0, 8b)
+    const validModels = this.models.filter((m) => !m.includes("1.5") && !m.includes("2.0") && !m.includes("8b"));
+    const pref = preferredModel && validModels.includes(preferredModel)
+      ? preferredModel
+      : this.getPreferredModel();
+
+    const candidateModels = [pref, ...validModels.filter((m) => m !== pref)];
 
     let lastError = null;
 

@@ -133,24 +133,20 @@
 
   <% if (inspection.multiModalAnalysis) { %>
     <!-- Multi-Modal AI Consensus & Cross-Verification Pipeline Banner -->
-    <div class="mb-6 rounded-xl border overflow-hidden shadow-xs <%= inspection.multiModalAnalysis.engineUsed === 'MULTI_MODAL_CONSENSUS' ? 'bg-gradient-to-r from-blue-50 via-indigo-50 to-sky-50 border-indigo-200' : (inspection.multiModalAnalysis.engineUsed === 'TEXT_LLM_OPTIMIZED' ? 'bg-gradient-to-r from-emerald-50 via-teal-50 to-green-50 border-emerald-200' : (inspection.multiModalAnalysis.quotaStatus === 'EXHAUSTED_DAILY_FALLBACK' ? 'bg-amber-50 border-amber-200' : 'bg-slate-50 border-slate-200')) %>">
+    <div class="mb-6 rounded-xl border overflow-hidden shadow-xs <%= inspection.multiModalAnalysis.engineUsed === 'MULTI_MODAL_CONSENSUS' ? 'bg-gradient-to-r from-blue-50 via-indigo-50 to-sky-50 border-indigo-200' : 'bg-slate-50 border-slate-200' %>">
       <div class="p-4 sm:p-5">
-        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b pb-3 mb-3 <%= inspection.multiModalAnalysis.engineUsed === 'MULTI_MODAL_CONSENSUS' ? 'border-indigo-100' : (inspection.multiModalAnalysis.engineUsed === 'TEXT_LLM_OPTIMIZED' ? 'border-emerald-100' : 'border-slate-200') %>">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b pb-3 mb-3 <%= inspection.multiModalAnalysis.engineUsed === 'MULTI_MODAL_CONSENSUS' ? 'border-indigo-100' : 'border-slate-200' %>">
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-xs <%= inspection.multiModalAnalysis.engineUsed === 'MULTI_MODAL_CONSENSUS' ? 'bg-indigo-600' : (inspection.multiModalAnalysis.engineUsed === 'TEXT_LLM_OPTIMIZED' ? 'bg-emerald-600' : (inspection.multiModalAnalysis.quotaStatus === 'EXHAUSTED_DAILY_FALLBACK' ? 'bg-amber-500' : 'bg-slate-700')) %>">
-              <i class="fa-solid <%= inspection.multiModalAnalysis.engineUsed === 'MULTI_MODAL_CONSENSUS' ? 'fa-network-wired' : (inspection.multiModalAnalysis.engineUsed === 'TEXT_LLM_OPTIMIZED' ? 'fa-bolt' : 'fa-microchip') %> text-lg"></i>
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-xs <%= inspection.multiModalAnalysis.engineUsed === 'MULTI_MODAL_CONSENSUS' ? 'bg-indigo-600' : 'bg-slate-700' %>">
+              <i class="fa-solid <%= inspection.multiModalAnalysis.engineUsed === 'MULTI_MODAL_CONSENSUS' ? 'fa-network-wired' : 'fa-microchip' %> text-lg"></i>
             </div>
             <div>
               <div class="flex flex-wrap items-center gap-2">
-                <span class="text-xs font-extrabold uppercase tracking-wider <%= inspection.multiModalAnalysis.engineUsed === 'MULTI_MODAL_CONSENSUS' ? 'text-indigo-900' : (inspection.multiModalAnalysis.engineUsed === 'TEXT_LLM_OPTIMIZED' ? 'text-emerald-900' : 'text-slate-800') %>">
+                <span class="text-xs font-extrabold uppercase tracking-wider <%= inspection.multiModalAnalysis.engineUsed === 'MULTI_MODAL_CONSENSUS' ? 'text-indigo-900' : 'text-slate-800' %>">
                   <% if (inspection.multiModalAnalysis.engineUsed === 'MULTI_MODAL_CONSENSUS') { %>
                     Multi-Modal AI Consensus Pipeline
-                  <% } else if (inspection.multiModalAnalysis.engineUsed === 'TEXT_LLM_OPTIMIZED') { %>
-                    Optimized Text-LLM Pipeline (Tokens Conserved)
-                  <% } else if (inspection.multiModalAnalysis.quotaStatus === 'EXHAUSTED_DAILY_FALLBACK') { %>
-                    Built-in Layout Engine (Daily AI Quota Reached - Restores Tomorrow)
                   <% } else { %>
-                    Built-in PaddleOCR Layout Engine
+                    AI Statutory Inspection Engine
                   <% } %>
                 </span>
                 <% if (inspection.multiModalAnalysis.agreementLevel === 'HIGH') { %>
@@ -161,26 +157,13 @@
                   <span class="badge bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5"><i class="fa-solid fa-triangle-exclamation me-1"></i> Cross-Modal Discrepancy Resolved</span>
                 <% } %>
               </div>
-              <p class="text-xs <%= inspection.multiModalAnalysis.engineUsed === 'MULTI_MODAL_CONSENSUS' ? 'text-indigo-700' : (inspection.multiModalAnalysis.engineUsed === 'TEXT_LLM_OPTIMIZED' ? 'text-emerald-700' : 'text-slate-600') %> mt-0.5">
-                <% if (inspection.multiModalAnalysis.engineUsed === 'MULTI_MODAL_CONSENSUS') { %>
-                  Step 1: PaddleOCR Spatial Tokens (x,y,w,h) + Text-LLM &bull; Step 2: Direct Packaging Vision-LLM &bull; Step 3: Consensus Cross-Verification
-                <% } else if (inspection.multiModalAnalysis.engineUsed === 'TEXT_LLM_OPTIMIZED') { %>
-                  Step 1 PaddleOCR Text-LLM extracted all mandatory declarations with high accuracy (&ge;88%). Vision-LLM bypassed to conserve daily free tokens!
-                <% } else if (inspection.multiModalAnalysis.quotaStatus === 'EXHAUSTED_DAILY_FALLBACK') { %>
-                  Daily free Gemini token limit reached for today. Inspection analyzed using built-in PaddleOCR heuristic spatial parser. Quota resets tomorrow.
-                <% } else { %>
-                  Operating on built-in PaddleOCR spatial layout parser. Add <code class="font-mono bg-white px-1 py-0.5 rounded border border-slate-300">GEMINI_API_KEY</code> to enable Gemini Multi-Modal consensus.
-                <% } %>
+              <p class="text-xs <%= inspection.multiModalAnalysis.engineUsed === 'MULTI_MODAL_CONSENSUS' ? 'text-indigo-700' : 'text-slate-600' %> mt-0.5">
+                Step 1: PaddleOCR Spatial Tokens (x,y,w,h) + Text-LLM &bull; Step 2: Direct Packaging Vision-LLM &bull; Step 3: Consensus Cross-Verification
               </p>
             </div>
           </div>
 
           <div class="flex items-center gap-2">
-            <% if (inspection.multiModalAnalysis.tokensSaved) { %>
-              <span class="badge bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-semibold px-2.5 py-1">
-                <i class="fa-solid fa-leaf text-emerald-600 me-1"></i> ~65% Tokens Saved
-              </span>
-            <% } %>
             <% if (inspection.multiModalAnalysis.step1TextLlm && inspection.multiModalAnalysis.step2VisionLlm) { %>
               <button class="btn btn-outline-primary btn-sm text-[11px] py-1 px-2.5 font-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMultiModalDetails">
                 <i class="fa-solid fa-code-compare me-1"></i> View Multi-Modal Comparison

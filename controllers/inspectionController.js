@@ -53,7 +53,6 @@ exports.postUploadScan = async (req, res) => {
     const ocrResult = await ocrService.processImage(localPath, sampleType);
 
     // Multi-Modal AI Pipeline: Step 1 (PaddleOCR Spatial Tokens) + Step 2 (Vision LLM) + Step 3 (Consensus)
-    // with automatic fallback to built-in layout parser if daily quota is reached
     const verification = await llmService.verifyPackaging({
       localPath,
       imageUrl,

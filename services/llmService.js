@@ -5,7 +5,14 @@ const RuleEngine = require("./ruleEngine");
 
 class LlmService {
   constructor() {
-    this.models = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-flash-8b"];
+    // Current active Gemini Flash & Lite models on Google AI Studio
+    this.models = [
+      "gemini-3.1-flash-lite",
+      "gemini-flash-latest",
+      "gemini-3.8-flash",
+      "gemini-3.5-flash-lite",
+      "gemini-pro-latest"
+    ];
     this.quotaExhaustedDate = null;
   }
 
@@ -14,11 +21,11 @@ class LlmService {
   }
 
   getPreferredModel() {
-    return (process.env.GEMINI_MODEL || "gemini-1.5-flash").trim();
+    return (process.env.GEMINI_MODEL || "gemini-3.1-flash-lite").trim();
   }
 
   getOptimizationMode() {
-    // 'full' (Step 1 + Step 2 + Step 3 always) or 'smart' (Step 1 first, skips Step 2 if Step 1 is high confidence)
+    // 'full' (Step 1 + Step 2 + Step 3 consensus) or 'smart' (Step 1 first, skip Step 2 if Step 1 is high confidence)
     return (process.env.LLM_OPTIMIZATION_MODE || "full").toLowerCase().trim();
   }
 
@@ -106,7 +113,7 @@ class LlmService {
   }
 
   /**
-   * Calls Google Gemini REST API with model fallback and error handling.
+   * Calls Google Gemini REST API with model fallback, retries on 503, and quota tracking.
    */
   async _callGeminiApi(payload, preferredModel = null) {
     const apiKey = this.getApiKey();
@@ -126,30 +133,43 @@ class LlmService {
 
     for (const model of candidateModels) {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-      try {
-        const response = await axios.post(url, payload, {
-          headers: { "Content-Type": "application/json" },
-          timeout: 25000
-        });
+      
+      // Up to 2 attempts per model (handles temporary 503 high demand spikes)
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const response = await axios.post(url, payload, {
+            headers: { "Content-Type": "application/json" },
+            timeout: 30000
+          });
 
-        if (response.data && response.data.candidates && response.data.candidates.length > 0) {
-          const candidate = response.data.candidates[0];
-          const textPart = candidate.content?.parts?.[0]?.text;
-          if (textPart) {
-            return { text: textPart, modelUsed: model };
+          if (response.data && response.data.candidates && response.data.candidates.length > 0) {
+            const candidate = response.data.candidates[0];
+            const textPart = candidate.content?.parts?.[0]?.text;
+            if (textPart) {
+              return { text: textPart, modelUsed: model };
+            }
           }
-        }
-      } catch (err) {
-        lastError = err;
-        const status = err.response ? err.response.status : null;
-        const errMsg = err.response?.data?.error?.message || err.message;
+        } catch (err) {
+          lastError = err;
+          const status = err.response ? err.response.status : null;
+          const errMsg = err.response?.data?.error?.message || err.message;
 
-        if (status === 429 || errMsg.includes("RESOURCE_EXHAUSTED") || errMsg.includes("quota")) {
-          this.markQuotaExhausted(errMsg);
-          throw new Error("QUOTA_EXHAUSTED_TODAY");
-        }
+          // If daily quota exhausted (429)
+          if (status === 429 || errMsg.includes("RESOURCE_EXHAUSTED") || errMsg.includes("quota")) {
+            this.markQuotaExhausted(errMsg);
+            throw new Error("QUOTA_EXHAUSTED_TODAY");
+          }
 
-        console.warn(`[LLM-Service] Gemini call failed for ${model} (${errMsg}). Trying next model...`);
+          // If 503 high demand spike, wait 1.2s and retry once
+          if (status === 503 && attempt === 0) {
+            console.log(`[LLM-Service] Temporary 503 on ${model}, retrying in 1.2s...`);
+            await new Promise((r) => setTimeout(r, 1200));
+            continue;
+          }
+
+          console.warn(`[LLM-Service] Gemini call failed for ${model} (${errMsg}). Trying next model...`);
+          break; // Move to next model candidate
+        }
       }
     }
 
@@ -164,7 +184,7 @@ class LlmService {
       return null;
     }
 
-    // Prepare token array with coordinates for LLM context
+    // Format tokens with their spatial (x, y, w, h) coordinates
     const formattedTokens = tokens.slice(0, 160).map((t, idx) => ({
       i: idx + 1,
       text: t.text,
@@ -175,21 +195,21 @@ class LlmService {
       conf: Math.round((t.confidence || 0.8) * 100) / 100
     }));
 
-    const systemInstruction = `You are a Legal Metrology Compliance Expert in India verifying packaged commodities under the Legal Metrology (Packaged Commodities) Rules, 2011.
+    const systemInstruction = `You are a Senior Legal Metrology Enforcement Officer in India verifying pre-packaged commodities under the Legal Metrology (Packaged Commodities) Rules, 2011.
 You are given OCR tokens extracted by PaddleOCR with canvas spatial coordinates (x, y, w, h) from an image of size ${imageDims.width}x${imageDims.height}.
 
-SPATIAL LAYOUT RULES:
-1. Tokens sharing approximately the same 'y' coordinate (+/- 15px) are on the SAME horizontal row.
-2. In typical packaging tables, keys are on the left and values are on the right (same row).
-3. If keys and values are stacked vertically, the value appears immediately below the key (similar 'x' coordinate, slightly larger 'y').
-4. Reconstruct fragmented or broken tokens into cohesive statutory declarations.
+SPATIAL LAYOUT RULES FOR RECONSTRUCTING SCRAMBLED TEXT:
+1. Horizontal Row Alignment: Tokens with similar 'y' coordinates (+/- 15px) are on the SAME horizontal line.
+2. Key-Value Association: On packaging labels, keys are on the left and values are on the right (e.g. "Net Quantity:" on left, "500 g" on right).
+3. Column Association: Stacked tokens with similar 'x' coordinates form vertical columns.
+4. Clean Statutory Parsing: Reconstruct broken numbers, dates, prices, and addresses.
 
 REQUIRED OUTPUT JSON FORMAT:
 {
-  "commodityName": "Common or generic name of commodity (e.g. Atta, Potato Chips, Body Lotion)",
+  "commodityName": "Common or generic name of commodity (e.g. Atta, Potato Chips, Talcum Powder)",
   "netQuantity": "Standard net quantity declaration (e.g. 500 g, 1 kg, 100 ml, 10 N)",
   "unit": "Measurement unit (g, kg, ml, l, n)",
-  "mrp": "Full MRP string as declared (e.g. ₹ 99.00 (incl. of all taxes))",
+  "mrp": "Full MRP string as declared (e.g. ₹ 99.00 (incl. of all taxes) or Rs. 61/-)",
   "mrpNumeric": 99.00,
   "hasInclusiveOfTaxes": true,
   "mfgDate": "Month and year of manufacture/packing (e.g. 08/2026 or AUG 2026)",
@@ -206,16 +226,14 @@ REQUIRED OUTPUT JSON FORMAT:
 Return PURE JSON only. Do not include markdown or explanations.`;
 
     const prompt = `Image dimensions: ${imageDims.width} x ${imageDims.height}\n\n` +
-      `Raw Full Text:\n${rawText || tokens.map(t => t.text).join(" ")}\n\n` +
+      `Raw Full Text:\n${rawText || tokens.map((t) => t.text).join(" ")}\n\n` +
       `PaddleOCR Spatial Tokens [x, y, w, h]:\n${JSON.stringify(formattedTokens, null, 2)}`;
 
     const payload = {
       contents: [
         {
           role: "user",
-          parts: [
-            { text: systemInstruction + "\n\n" + prompt }
-          ]
+          parts: [{ text: systemInstruction + "\n\n" + prompt }]
         }
       ],
       generationConfig: {
@@ -241,28 +259,50 @@ Return PURE JSON only. Do not include markdown or explanations.`;
   }
 
   /**
-   * STEP 2: Process product image directly through Vision-LLM (Gemini Flash Vision).
+   * STEP 2: Process product image directly through Vision-LLM (Cloudinary URL or local file buffer).
    */
-  async processStep2VisionLlm(imagePathOrBuffer, mimeType = "image/jpeg") {
+  async processStep2VisionLlm(imagePathOrUrl, mimeType = "image/jpeg") {
     let base64Data = "";
-    if (Buffer.isBuffer(imagePathOrBuffer)) {
-      base64Data = imagePathOrBuffer.toString("base64");
-    } else if (typeof imagePathOrBuffer === "string" && fs.existsSync(imagePathOrBuffer)) {
-      const buf = fs.readFileSync(imagePathOrBuffer);
+
+    // 1. If remote Cloudinary / HTTP URL
+    if (typeof imagePathOrUrl === "string" && (imagePathOrUrl.startsWith("http://") || imagePathOrUrl.startsWith("https://"))) {
+      try {
+        console.log(`[LLM-Service] Fetching remote image for Vision LLM: ${imagePathOrUrl}`);
+        const resp = await axios.get(imagePathOrUrl, { responseType: "arraybuffer", timeout: 15000 });
+        base64Data = Buffer.from(resp.data).toString("base64");
+        const ct = resp.headers["content-type"];
+        if (ct && ct.includes("png")) mimeType = "image/png";
+        else if (ct && ct.includes("webp")) mimeType = "image/webp";
+        else mimeType = "image/jpeg";
+      } catch (dlErr) {
+        console.warn("[LLM-Service] Could not fetch remote Cloudinary image URL:", dlErr.message);
+      }
+    }
+
+    // 2. If local path on disk
+    if (!base64Data && typeof imagePathOrUrl === "string" && fs.existsSync(imagePathOrUrl)) {
+      const buf = fs.readFileSync(imagePathOrUrl);
       base64Data = buf.toString("base64");
-      const ext = path.extname(imagePathOrBuffer).toLowerCase();
+      const ext = path.extname(imagePathOrUrl).toLowerCase();
       if (ext === ".png") mimeType = "image/png";
       else if (ext === ".webp") mimeType = "image/webp";
       else mimeType = "image/jpeg";
-    } else {
-      throw new Error(`Vision LLM could not locate image buffer or path: ${imagePathOrBuffer}`);
     }
 
-    const visionPrompt = `You are an Official Legal Metrology Enforcement Officer in India inspecting this product packaging label.
-Examine this packaging label with high optical precision to find all mandatory statutory declarations under the Legal Metrology (Packaged Commodities) Rules, 2011 (Rule 6).
+    // 3. If raw Buffer
+    if (!base64Data && Buffer.isBuffer(imagePathOrUrl)) {
+      base64Data = imagePathOrUrl.toString("base64");
+    }
+
+    if (!base64Data) {
+      throw new Error(`Vision LLM could not locate image buffer or path: ${imagePathOrUrl}`);
+    }
+
+    const visionPrompt = `You are a Senior Legal Metrology Enforcement Officer in India inspecting this product packaging label.
+Examine this packaging label with optical precision to find all mandatory statutory declarations under the Legal Metrology (Packaged Commodities) Rules, 2011 (Rule 6).
 
 STATUTORY REQUIREMENTS TO EXTRACT:
-1. Generic/Common Name of Commodity (Rule 6(1)(b))
+1. Generic/Common Name of Commodity (Rule 6(1)(b)) - e.g. Talcum Powder, Atta, Biscuit, Soap
 2. Net Quantity and Unit (Rule 6(1)(c), Rule 11-13) - Look for g, kg, ml, l, or counts (N)
 3. Maximum Retail Price (MRP) (Rule 6(1)(da)) - Must look for 'MRP' / '₹' / 'Rs.' and whether 'Inclusive of all taxes' is declared
 4. Month & Year of Manufacture/Packing/Import (Rule 6(1)(d))
@@ -555,7 +595,7 @@ Return pure JSON with no markdown wrapping.`;
         ocrResult.image_dims || { width: 800, height: 600 },
         ocrResult.raw_text || ""
       );
-      console.log(`[LLM-Service] Step 1 complete. Compliance Status: ${step1Result?.evaluation?.complianceStatus}, Score: ${step1Result?.evaluation?.score}%`);
+      console.log(`[LLM-Service] Step 1 complete. Model: ${step1Result?.modelUsed}, Compliance Status: ${step1Result?.evaluation?.complianceStatus}, Score: ${step1Result?.evaluation?.score}%`);
     } catch (step1Err) {
       console.warn(`[LLM-Service] Step 1 (Text-LLM) encountered error: ${step1Err.message}`);
       if (step1Err.message === "QUOTA_EXHAUSTED_TODAY") {
@@ -579,7 +619,7 @@ Return pure JSON with no markdown wrapping.`;
     }
 
     // CHECK FOR STEP 1 SHORT-CIRCUIT (Token-Saving Mode)
-    // If optimizationMode === 'smart', check if Step 1 produced high-confidence, violation-free result
+    // Only active if optimizationMode === 'smart' AND Step 1 is high confidence with all critical declarations
     if (optimizationMode === "smart" && step1Result && step1Result.evaluation) {
       const s = step1Result.structured;
       const evalScore = step1Result.evaluation.score;
@@ -617,13 +657,16 @@ Return pure JSON with no markdown wrapping.`;
       }
     }
 
-    // STEP 2: Vision-LLM directly on packaging image
+    // STEP 2: Vision-LLM directly on packaging image (Cloudinary URL or local file)
     try {
       console.log("[LLM-Service] Executing Step 2: Vision-LLM directly on packaging image...");
-      if (localPath && fs.existsSync(localPath)) {
-        step2Result = await this.processStep2VisionLlm(localPath);
-        console.log(`[LLM-Service] Step 2 complete. Compliance Status: ${step2Result?.evaluation?.complianceStatus}, Score: ${step2Result?.evaluation?.score}%`);
-      }
+      // Prefer Cloudinary remote URL if available; otherwise use localPath
+      const targetImage = (imageUrl && (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")))
+        ? imageUrl
+        : localPath;
+
+      step2Result = await this.processStep2VisionLlm(targetImage);
+      console.log(`[LLM-Service] Step 2 complete. Model: ${step2Result?.modelUsed}, Compliance Status: ${step2Result?.evaluation?.complianceStatus}, Score: ${step2Result?.evaluation?.score}%`);
     } catch (step2Err) {
       console.warn(`[LLM-Service] Step 2 (Vision-LLM) encountered error: ${step2Err.message}`);
       if (step2Err.message === "QUOTA_EXHAUSTED_TODAY") {
@@ -631,7 +674,7 @@ Return pure JSON with no markdown wrapping.`;
       }
     }
 
-    // STEP 3: Consensus and Comparison
+    // STEP 3: Multi-Modal Consensus and Comparison
     console.log("[LLM-Service] Executing Step 3: Multi-Modal Consensus comparison...");
     const consensusResult = this.computeConsensus(step1Result, step2Result, ocrResult);
 

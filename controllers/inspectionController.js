@@ -32,6 +32,16 @@ exports.postUploadScan = async (req, res) => {
     } else if (req.file) {
       localPath = req.file.path;
       imageUrl = `/uploads/${req.file.filename}`;
+      // Sync to Cloudinary immediately if configured so Vision LLM receives the Cloudinary URL
+      try {
+        const cRes = await uploadToCloudinaryOrLocal(req.file.path, req.file.filename);
+        if (cRes && cRes.isCloud && cRes.url) {
+          imageUrl = cRes.url;
+          console.log("[Inspection] Cloudinary upload successful:", imageUrl);
+        }
+      } catch (cErr) {
+        console.warn("[Inspection] Cloudinary sync notice:", cErr.message);
+      }
     } else {
       if (req.session) {
         req.session.errorMessage = "Please upload an image file or choose a sample packaging label.";

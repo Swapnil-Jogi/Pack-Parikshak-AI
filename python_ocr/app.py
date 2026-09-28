@@ -115,10 +115,20 @@ def process_image(img_pil, image_path=None):
             except (ValueError, TypeError):
                 conf = 0.85
             if text:
+                xs = [p[0] for p in box_coords]
+                ys = [p[1] for p in box_coords]
+                min_x = round(min(xs), 2)
+                min_y = round(min(ys), 2)
+                box_w = round(max(xs) - min_x, 2)
+                box_h = round(max(ys) - min_y, 2)
                 raw_boxes.append({
                     'box': box_coords,
                     'text': text,
-                    'confidence': conf
+                    'confidence': conf,
+                    'x': min_x,
+                    'y': min_y,
+                    'w': box_w,
+                    'h': box_h
                 })
 
         # 4. Spatial & semantic layout parsing using font-tolerant heuristics

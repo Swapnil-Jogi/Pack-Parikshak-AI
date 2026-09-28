@@ -3,6 +3,7 @@ const fs = require("fs");
 const Inspection = require("../models/Inspection");
 const ocrService = require("../services/ocrService");
 const RuleEngine = require("../services/ruleEngine");
+const llmService = require("../services/llmService");
 const { uploadToCloudinaryOrLocal } = require("../config/cloudinary");
 
 // Render Upload & Sample Selection Page
@@ -41,13 +42,22 @@ exports.postUploadScan = async (req, res) => {
     console.log(`[Inspection] Processing image through OCR Engine: ${localPath} (sampleType: ${sampleType || "custom"})`);
     const ocrResult = await ocrService.processImage(localPath, sampleType);
 
-    // Run Statutory Rule Verification Engine
-    const evaluation = RuleEngine.evaluate(ocrResult.structured, ocrResult.raw_text);
+    // Multi-Modal AI Pipeline: Step 1 (PaddleOCR Spatial Tokens) + Step 2 (Vision LLM) + Step 3 (Consensus)
+    // with automatic fallback to built-in layout parser if daily quota is reached
+    const verification = await llmService.verifyPackaging({
+      localPath,
+      imageUrl,
+      ocrResult,
+      sampleType
+    });
+
+    const finalData = verification.finalData || ocrResult.structured;
+    const evaluation = verification.evaluation || RuleEngine.evaluate(finalData, ocrResult.raw_text);
 
     // Create Inspection record in MongoDB
     const inspection = new Inspection({
       user: req.user ? req.user._id : null,
-      productName: ocrResult.structured.commodityName || req.body.productName || "Packaged Commodity",
+      productName: finalData.commodityName || req.body.productName || "Packaged Commodity",
       brand: req.body.brand || "Commercial Brand",
       category: req.body.category || "Food & Groceries",
       imageUrl: imageUrl,
@@ -55,13 +65,18 @@ exports.postUploadScan = async (req, res) => {
       imageDims: ocrResult.image_dims || { width: 800, height: 600 },
       ocrBoxes: ocrResult.boxes || [],
       rawText: ocrResult.raw_text || "",
-      extractedData: ocrResult.structured,
+      extractedData: finalData,
       rulesEvaluation: evaluation.rules,
       complianceStatus: evaluation.complianceStatus,
       complianceScore: evaluation.score,
       violationsCount: evaluation.violationsCount,
       violationsList: evaluation.violationsList,
       section36Penalty: evaluation.section36Penalty,
+      multiModalAnalysis: verification.multiModalAnalysis || {
+        engineUsed: "HEURISTIC_OLD_METHOD",
+        agreementLevel: "NOT_APPLICABLE",
+        confidenceScore: 78
+      },
       location: {
         state: req.body.state || (req.user ? req.user.state : "Delhi"),
         district: req.body.district || "Central",
@@ -70,7 +85,7 @@ exports.postUploadScan = async (req, res) => {
     });
 
     await inspection.save();
-    console.log(`[Inspection] Saved new inspection record: ${inspection.inspectionNumber} (${inspection.complianceStatus})`);
+    console.log(`[Inspection] Saved new inspection record: ${inspection.inspectionNumber} (${inspection.complianceStatus}) [Engine: ${inspection.multiModalAnalysis?.engineUsed || "Heuristic"}]`);
 
     // Non-blocking Cloudinary sync if configured
     if (req.file) {

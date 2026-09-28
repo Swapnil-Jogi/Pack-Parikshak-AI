@@ -11,6 +11,32 @@ class OcrService {
   }
 
   /**
+   * Normalizes bounding boxes to ensure every detection contains (x, y, w, h) coordinates.
+   */
+  _normalizeBoxes(result) {
+    if (!result || !Array.isArray(result.boxes)) return result;
+    result.boxes = result.boxes.map((b) => {
+      if (b.x !== undefined && b.y !== undefined && b.w !== undefined && b.h !== undefined) {
+        return b;
+      }
+      const xs = (b.box || []).map((p) => p[0]);
+      const ys = (b.box || []).map((p) => p[1]);
+      const minX = xs.length ? Math.min(...xs) : 0;
+      const minY = ys.length ? Math.min(...ys) : 0;
+      const boxW = xs.length ? Math.max(...xs) - minX : 0;
+      const boxH = ys.length ? Math.max(...ys) - minY : 0;
+      return {
+        ...b,
+        x: Math.round(minX * 10) / 10,
+        y: Math.round(minY * 10) / 10,
+        w: Math.round(boxW * 10) / 10,
+        h: Math.round(boxH * 10) / 10
+      };
+    });
+    return result;
+  }
+
+  /**
    * Processes packaging image using PaddleOCR microservice with automatic child-process and sample-cache fallbacks.
    * @param {String} imagePath - Absolute path to local image
    * @param {String} [sampleType] - Optional identifier for 1-click sample demonstrations ('wheat_flour' or 'snack_pack')
@@ -23,11 +49,11 @@ class OcrService {
     if (sampleType !== "diagnostics_force_python") {
       if (sampleType === "wheat_flour" || normPath.includes("compliant_wheat_flour")) {
         console.log("[OCR-Service] Serving instant high-accuracy result for compliant wheat flour sample.");
-        return JSON.parse(JSON.stringify(sampleOcrData.sampleWheatFlour));
+        return this._normalizeBoxes(JSON.parse(JSON.stringify(sampleOcrData.sampleWheatFlour)));
       }
       if (sampleType === "snack_pack" || normPath.includes("violating_snack_pack")) {
         console.log("[OCR-Service] Serving instant high-accuracy result for violating snack pack sample.");
-        return JSON.parse(JSON.stringify(sampleOcrData.sampleSnackPack));
+        return this._normalizeBoxes(JSON.parse(JSON.stringify(sampleOcrData.sampleSnackPack)));
       }
     }
 
@@ -44,7 +70,7 @@ class OcrService {
       );
 
       if (response.data && response.data.success) {
-        return response.data;
+        return this._normalizeBoxes(response.data);
       }
     } catch (httpErr) {
       console.warn(`[OCR-Service] Microservice HTTP call failed (${httpErr.message}).`);
@@ -91,7 +117,7 @@ class OcrService {
           );
         });
 
-        return standaloneResult;
+        return this._normalizeBoxes(standaloneResult);
       } catch (fallbackErr) {
         console.warn(`[OCR-Service] Standalone execution encountered error: ${fallbackErr.message}`);
       }

@@ -72,10 +72,20 @@ def run_standalone(image_path):
             except (ValueError, TypeError):
                 conf = 0.85
             if text:
+                xs = [p[0] for p in box_coords]
+                ys = [p[1] for p in box_coords]
+                min_x = round(min(xs), 2)
+                min_y = round(min(ys), 2)
+                box_w = round(max(xs) - min_x, 2)
+                box_h = round(max(ys) - min_y, 2)
                 raw_boxes.append({
                     'box': box_coords,
                     'text': text,
-                    'confidence': conf
+                    'confidence': conf,
+                    'x': min_x,
+                    'y': min_y,
+                    'w': box_w,
+                    'h': box_h
                 })
 
         structured, full_text = parser.parse(raw_boxes, image_width=upright_w, image_height=upright_h)

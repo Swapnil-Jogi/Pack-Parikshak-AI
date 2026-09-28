@@ -108,6 +108,49 @@ const InspectionSchema = new mongoose.Schema(
       applicableClause: { type: String, default: "Section 36(1) of Legal Metrology Act, 2009" },
       estimatedAmount: { type: Number, default: 25000 }
     },
+    multiModalAnalysis: {
+      engineUsed: {
+        type: String,
+        default: "HEURISTIC_OLD_METHOD"
+      },
+      agreementLevel: {
+        type: String,
+        default: "NOT_APPLICABLE"
+      },
+      confidenceScore: {
+        type: Number,
+        default: 0
+      },
+      step1TextLlm: {
+        type: mongoose.Schema.Types.Mixed,
+        default: null
+      },
+      step2VisionLlm: {
+        type: mongoose.Schema.Types.Mixed,
+        default: null
+      },
+      discrepancies: [
+        {
+          field: String,
+          textLlmValue: String,
+          visionLlmValue: String,
+          resolvedValue: String,
+          resolutionReason: String
+        }
+      ],
+      quotaStatus: {
+        type: String,
+        default: "AVAILABLE"
+      },
+      tokensSaved: {
+        type: Boolean,
+        default: false
+      },
+      fallbackReason: {
+        type: String,
+        default: ""
+      }
+    },
     location: {
       state: { type: String, default: "Delhi", index: true },
       district: { type: String, default: "Central" },

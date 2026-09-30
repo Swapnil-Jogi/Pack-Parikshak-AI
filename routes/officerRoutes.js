@@ -7,6 +7,8 @@ const { validateNotice } = require("../middleware/validator");
 router.get("/officer/dashboard", ensureOfficer, officerController.getDashboard);
 router.post("/officer/notice", ensureOfficer, validateNotice, officerController.postIssueNotice);
 router.post("/officer/status", ensureOfficer, officerController.postUpdateReviewStatus);
+router.post("/officer/inspections/:id/delete", ensureOfficer, officerController.postDeleteInspection);
+router.delete("/officer/inspections/:id", ensureOfficer, officerController.postDeleteInspection);
 
 module.exports = router;
 

@@ -2,6 +2,7 @@ const Inspection = require("../models/Inspection");
 const Notice = require("../models/Notice");
 const emailService = require("../services/emailService");
 const PdfService = require("../services/pdfService");
+const fs = require("fs");
 
 // Render Officer Command Hub
 exports.getDashboard = async (req, res) => {
@@ -244,6 +245,60 @@ exports.postUpdateReviewStatus = async (req, res) => {
   } catch (err) {
     console.error("[Officer] Error updating status:", err);
     res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+// Permanently Delete Product Inspection Record from Officer Command Hub
+exports.postDeleteInspection = async (req, res) => {
+  try {
+    const inspectionId = req.params.id;
+    const inspection = await Inspection.findById(inspectionId);
+    if (!inspection) {
+      if (req.xhr || req.headers.accept?.includes("application/json")) {
+        return res.status(404).json({ success: false, error: "Product inspection record not found" });
+      }
+      if (req.session) req.session.errorMessage = "Product inspection record not found.";
+      return res.redirect("/officer/dashboard");
+    }
+
+    // Safely remove associated notices
+    await Notice.deleteMany({ inspection: inspection._id });
+
+    // Safely clean up local uploaded image file if present and not a static sample
+    if (inspection.localImagePath && fs.existsSync(inspection.localImagePath)) {
+      const normPath = inspection.localImagePath.toLowerCase();
+      if (!normPath.includes("compliant_wheat_flour") && !normPath.includes("violating_snack_pack")) {
+        try {
+          fs.unlinkSync(inspection.localImagePath);
+        } catch (fileErr) {
+          console.warn("[Officer] Could not unlink local image file:", fileErr.message);
+        }
+      }
+    }
+
+    const inspNum = inspection.inspectionNumber || inspectionId;
+    const prodName = inspection.productName || "Product";
+    await Inspection.findByIdAndDelete(inspectionId);
+    console.log(`[Officer] Inspection ${inspNum} (${prodName}) permanently deleted by Officer ${req.user ? req.user.name : "Admin"}`);
+
+    if (req.xhr || req.headers.accept?.includes("application/json")) {
+      return res.json({
+        success: true,
+        message: `Product "${prodName}" (${inspNum}) was permanently deleted from the regulatory database.`
+      });
+    }
+
+    if (req.session) {
+      req.session.successMessage = `Product "${prodName}" (${inspNum}) deleted successfully.`;
+    }
+    return res.redirect("/officer/dashboard");
+  } catch (err) {
+    console.error("[Officer] Error deleting product inspection:", err);
+    if (req.xhr || req.headers.accept?.includes("application/json")) {
+      return res.status(500).json({ success: false, error: err.message });
+    }
+    if (req.session) req.session.errorMessage = `Failed to delete product: ${err.message}`;
+    return res.redirect("/officer/dashboard");
   }
 };
 

@@ -271,6 +271,13 @@
               <a href="/reports/<%= item._id %>/pdf" class="btn btn-outline-danger btn-sm text-[11px] py-1 px-2 flex items-center gap-1" title="<%= t('btnDownloadPdf') %>">
                 <i class="fa-solid fa-file-pdf"></i> PDF
               </a>
+              <button type="button" class="btn btn-outline-danger btn-sm text-[11px] py-1 px-2 flex items-center gap-1 btn-delete-inspection"
+                data-id="<%= item._id %>"
+                data-number="<%= item.inspectionNumber %>"
+                data-name="<%= item.productName %>"
+                title="<%= t('btnDelete') %> Product Record">
+                <i class="fa-solid fa-trash-can text-red-500"></i> <%= t('btnDelete') %>
+              </button>
             </div>
           </div>
         <% }) %>
@@ -371,6 +378,13 @@
                   <a href="/reports/<%= item._id %>/pdf" class="btn btn-outline-danger btn-sm text-[11px] py-1 px-2" title="<%= t('btnDownloadPdf') %>">
                     <i class="fa-solid fa-file-pdf"></i>
                   </a>
+                  <button type="button" class="btn btn-outline-danger btn-sm text-[11px] py-1 px-2 btn-delete-inspection hover:bg-red-50"
+                    data-id="<%= item._id %>"
+                    data-number="<%= item.inspectionNumber %>"
+                    data-name="<%= item.productName %>"
+                    title="<%= t('btnDelete') %> Product Record">
+                    <i class="fa-solid fa-trash-can text-red-500"></i>
+                  </button>
                 </td>
               </tr>
             <% }) %>
@@ -570,6 +584,63 @@
         var penalty = parseInt(btn.getAttribute("data-penalty") || "25000", 10);
         if (typeof openNoticeModal === "function") {
           openNoticeModal(id, prod, mfr, viols, penalty, type);
+        }
+      });
+    });
+
+    // 3. Wire Delete buttons with confirmation dialog and seamless AJAX removal
+    document.querySelectorAll(".btn-delete-inspection").forEach(function (btn) {
+      btn.addEventListener("click", async function (e) {
+        e.preventDefault();
+        var id = btn.getAttribute("data-id");
+        var num = btn.getAttribute("data-number") || "record";
+        var name = btn.getAttribute("data-name") || "this product";
+
+        var confirmed = window.confirm(
+          "Permanently delete product \"" + name + "\" (" + num + ")?\n\nThis will remove the product and its statutory inspection record from the database."
+        );
+        if (!confirmed) return;
+
+        var originalHtml = btn.innerHTML;
+        try {
+          btn.disabled = true;
+          btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-red-500"></i>';
+
+          var response = await fetch("/officer/inspections/" + id + "/delete", {
+            method: "POST",
+            headers: {
+              "Accept": "application/json",
+              "Content-Type": "application/json"
+            }
+          });
+
+          var result = await response.json();
+          if (result.success) {
+            // Find parent row or card and smoothly animate removal
+            var targetRow = btn.closest(".queue-row");
+            if (targetRow) {
+              targetRow.style.transition = "all 0.35s ease";
+              targetRow.style.opacity = "0";
+              targetRow.style.transform = "translateX(-20px)";
+              setTimeout(function () {
+                targetRow.remove();
+                if (document.querySelectorAll(".queue-row").length === 0) {
+                  window.location.reload();
+                }
+              }, 350);
+            } else {
+              window.location.reload();
+            }
+          } else {
+            alert("Error: " + (result.error || "Could not delete record."));
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+          }
+        } catch (err) {
+          console.error("Delete request failed:", err);
+          alert("Network error while deleting record. Please check connection.");
+          btn.disabled = false;
+          btn.innerHTML = originalHtml;
         }
       });
     });

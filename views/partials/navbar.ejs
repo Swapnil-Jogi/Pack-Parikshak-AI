@@ -54,19 +54,19 @@
   <!-- Main Navbar -->
   <nav class="bg-slate-900 text-white border-t border-slate-800 shadow-md">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between h-16">
+      <div class="flex items-center justify-between h-16 gap-2">
         
         <!-- Brand Logo & Title -->
-        <a href="/" class="flex items-center space-x-3 text-decoration-none group">
-          <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center text-slate-950 shadow-md font-bold text-xl group-hover:scale-105 transition">
+        <a href="/" class="flex items-center space-x-2 sm:space-x-3 text-decoration-none group min-w-0">
+          <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center text-slate-950 shadow-md font-bold text-lg sm:text-xl group-hover:scale-105 transition flex-shrink-0">
             <i class="fa-solid fa-scale-balanced"></i>
           </div>
-          <div>
-            <div class="flex items-center gap-2">
-              <span class="font-extrabold text-lg tracking-tight text-white"><%= t('portalName') %></span>
-              <span class="bg-amber-500/20 text-amber-300 text-[10px] font-bold px-1.5 py-0.5 rounded border border-amber-500/30">SIH-26034</span>
+          <div class="min-w-0">
+            <div class="flex items-center gap-1.5 sm:gap-2">
+              <span class="font-extrabold text-sm sm:text-base md:text-lg tracking-tight text-white whitespace-nowrap"><%= t('portalName') %></span>
+              <span class="hidden sm:inline-flex bg-amber-500/20 text-amber-300 text-[10px] font-bold px-1.5 py-0.5 rounded border border-amber-500/30 whitespace-nowrap flex-shrink-0">SIH-26034</span>
             </div>
-            <div class="hidden sm:block text-[10px] text-slate-400 truncate max-w-[240px] md:max-w-md">
+            <div class="hidden md:block text-[10px] text-slate-400 truncate max-w-[240px] md:max-w-md">
               <%= t('subTitle') %>
             </div>
           </div>
@@ -100,16 +100,16 @@
         </div>
 
         <!-- Auth Actions (Consumer Sign In & Officer Sign In) -->
-        <div class="flex items-center space-x-1.5 sm:space-x-2">
+        <div class="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
           <% if (user) { %>
             <div class="dropdown">
-              <button class="nav-link-item flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-white px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-700 hover:border-amber-400 transition-all duration-200 shadow-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="fa-solid fa-circle-user text-amber-400 text-sm"></i>
-                <span class="truncate max-w-[85px] sm:max-w-[130px]">Hi <%= user.name %></span>
+              <button class="nav-link-item flex items-center gap-1 sm:gap-1.5 bg-slate-800 hover:bg-slate-700 text-white px-2 sm:px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-700 hover:border-amber-400 transition-all duration-200 shadow-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fa-solid fa-circle-user text-amber-400 text-sm flex-shrink-0"></i>
+                <span class="truncate max-w-[65px] sm:max-w-[120px] hidden xs:inline"><%= user.name.split(' ')[0] %></span>
                 <% if (user.role === 'officer') { %>
-                  <span class="badge bg-amber-500 text-slate-950 text-[8px] font-bold px-1 py-0.2 rounded ms-0.5">OFFICER</span>
+                  <span class="badge bg-amber-500 text-slate-950 text-[8px] font-bold px-1 py-0.5 rounded flex-shrink-0">OFFICER</span>
                 <% } %>
-                <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 ms-0.5"></i>
+                <i class="fa-solid fa-chevron-down text-[9px] text-slate-400 flex-shrink-0"></i>
               </button>
               <ul class="dropdown-menu dropdown-menu-end shadow-xl border border-slate-200 text-xs py-1.5 mt-1 rounded-lg">
                 <li class="px-3 py-1.5 border-b border-slate-100 text-slate-500 font-medium flex items-center justify-between gap-2">
@@ -147,24 +147,24 @@
               </ul>
             </div>
           <% } else { %>
-            <div class="flex items-center space-x-1.5 sm:space-x-2">
-              <a href="/auth/login?role=user" class="hidden md:inline-flex nav-link-item text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 hover:border-slate-500 transition items-center gap-1.5 shadow-sm" title="Sign In as Consumer or Business Packer">
+            <div class="flex items-center space-x-1 sm:space-x-2">
+              <a href="/auth/login?role=user" class="hidden md:inline-flex nav-link-item text-xs font-semibold px-2.5 sm:px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 hover:border-slate-500 transition items-center gap-1.5 shadow-sm" title="Sign In as Consumer or Business Packer">
                 <i class="fa-solid fa-user text-slate-400 text-xs"></i>
                 <span><%= t('consumerSignIn') %></span>
               </a>
-              <a href="/auth/login?role=officer" class="hidden md:inline-flex nav-link-item text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 hover:text-amber-200 border border-amber-500/50 hover:border-amber-400 transition items-center gap-1.5 shadow-sm" title="Official Legal Metrology Enforcement Officer Sign In">
+              <a href="/auth/login?role=officer" class="hidden md:inline-flex nav-link-item text-xs font-semibold px-2.5 sm:px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 hover:text-amber-200 border border-amber-500/50 hover:border-amber-400 transition items-center gap-1.5 shadow-sm" title="Official Legal Metrology Enforcement Officer Sign In">
                 <i class="fa-solid fa-shield-halved text-amber-400 text-xs"></i>
                 <span><%= t('officerSignIn') %></span>
               </a>
-              <a href="/auth/register" class="nav-link-item text-xs font-bold px-2.5 sm:px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-sm hover:shadow transition flex items-center gap-1">
+              <a href="/auth/register" class="nav-link-item text-xs font-bold px-2 sm:px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-sm hover:shadow transition flex items-center gap-1 flex-shrink-0">
                 <i class="fa-solid fa-user-plus text-xs"></i>
                 <span><%= t('register') %></span>
               </a>
             </div>
           <% } %>
 
-          <!-- Mobile Menu Button -->
-          <button id="mobileMenuBtn" class="nav-link-item lg:hidden text-slate-300 hover:text-white p-2 rounded-lg hover:bg-slate-800 transition focus:outline-none" type="button" aria-expanded="false" aria-controls="mobileMenu" aria-label="Toggle navigation menu">
+          <!-- Mobile Menu Button: Guaranteed visible and never squeezed -->
+          <button id="mobileMenuBtn" class="nav-link-item lg:hidden text-slate-300 hover:text-white p-1.5 sm:p-2 rounded-lg hover:bg-slate-800 transition focus:outline-none flex-shrink-0 ms-0.5" type="button" aria-expanded="false" aria-controls="mobileMenu" aria-label="Toggle navigation menu">
             <i id="mobileMenuIcon" class="fa-solid fa-bars text-lg"></i>
           </button>
         </div>

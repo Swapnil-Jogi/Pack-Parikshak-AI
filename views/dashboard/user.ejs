@@ -40,31 +40,31 @@
   <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
     <div class="bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between h-full">
       <div class="flex items-center justify-between gap-1 text-[11px] font-bold text-slate-500 uppercase">
-        <span class="truncate"><%= t('totalScansCard') %></span>
+        <span><%= t('totalScansCard') %></span>
         <i class="fa-solid fa-boxes-stacked text-slate-400 text-xs flex-shrink-0"></i>
       </div>
-      <div class="text-xl sm:text-2xl font-extrabold text-slate-900 mt-2 truncate"><%= stats.totalScans %></div>
+      <div class="text-xl sm:text-2xl font-extrabold text-slate-900 mt-2"><%= stats.totalScans %></div>
     </div>
     <div class="bg-white p-3.5 sm:p-4 rounded-xl border border-emerald-200 shadow-sm flex flex-col justify-between h-full">
       <div class="flex items-center justify-between gap-1 text-[11px] font-bold text-emerald-700 uppercase">
-        <span class="truncate"><%= t('compliantCard') %></span>
+        <span><%= t('compliantCard') %></span>
         <i class="fa-solid fa-circle-check text-emerald-500 text-xs flex-shrink-0"></i>
       </div>
-      <div class="text-xl sm:text-2xl font-extrabold text-emerald-600 mt-2 truncate"><%= stats.compliantCount %></div>
+      <div class="text-xl sm:text-2xl font-extrabold text-emerald-600 mt-2"><%= stats.compliantCount %></div>
     </div>
     <div class="bg-white p-3.5 sm:p-4 rounded-xl border border-red-200 shadow-sm flex flex-col justify-between h-full">
       <div class="flex items-center justify-between gap-1 text-[11px] font-bold text-red-700 uppercase">
-        <span class="truncate"><%= t('flaggedViolationsCard') %></span>
+        <span><%= t('flaggedViolationsCard') %></span>
         <i class="fa-solid fa-triangle-exclamation text-red-500 text-xs flex-shrink-0"></i>
       </div>
-      <div class="text-xl sm:text-2xl font-extrabold text-red-600 mt-2 truncate"><%= stats.violationCount %></div>
+      <div class="text-xl sm:text-2xl font-extrabold text-red-600 mt-2"><%= stats.violationCount %></div>
     </div>
     <div class="bg-white p-3.5 sm:p-4 rounded-xl border border-amber-200 shadow-sm flex flex-col justify-between h-full">
       <div class="flex items-center justify-between gap-1 text-[11px] font-bold text-amber-700 uppercase">
-        <span class="truncate"><%= t('averageScoreCard') %></span>
+        <span><%= t('averageScoreCard') %></span>
         <i class="fa-solid fa-chart-line text-amber-500 text-xs flex-shrink-0"></i>
       </div>
-      <div class="text-xl sm:text-2xl font-extrabold text-amber-500 mt-2 truncate"><%= stats.avgScore %>%</div>
+      <div class="text-xl sm:text-2xl font-extrabold text-amber-500 mt-2"><%= stats.avgScore %>%</div>
     </div>
   </div>
 

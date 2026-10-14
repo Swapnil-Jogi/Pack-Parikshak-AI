@@ -4,31 +4,31 @@
 <main class="flex-grow py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
   
   <!-- Officer Identity & Jurisdiction Bar -->
-  <div class="bg-govblue text-white rounded-xl p-5 mb-8 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border border-slate-700">
-    <div class="flex items-center space-x-3">
-      <div class="w-12 h-12 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center text-xl font-bold">
+  <div class="bg-govblue text-white rounded-xl p-4 sm:p-5 mb-6 sm:mb-8 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border border-slate-700">
+    <div class="flex items-start sm:items-center space-x-3 w-full md:w-auto">
+      <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center text-lg sm:text-xl font-bold flex-shrink-0 mt-0.5 sm:mt-0">
         <i class="fa-solid fa-shield-halved"></i>
       </div>
-      <div>
-        <div class="flex items-center gap-2">
-          <h1 class="text-xl font-extrabold tracking-tight"><%= t('officerCmdHeading') %></h1>
-          <span class="bg-amber-500 text-govblue-dark text-[10px] font-bold px-2 py-0.5 rounded"><%= t('legalEnforcementBadge') %></span>
+      <div class="flex-1 min-w-0">
+        <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+          <h1 class="text-lg sm:text-xl font-extrabold tracking-tight leading-snug"><%= t('officerCmdHeading') %></h1>
+          <span class="bg-amber-500 text-govblue-dark text-[10px] font-bold px-2 py-0.5 rounded whitespace-nowrap"><%= t('legalEnforcementBadge') %></span>
         </div>
-        <p class="text-xs text-slate-300 mt-0.5">
-          <%= user ? user.name : t('officerLabel') %> | <%= t('badgeLabel') %>: <strong><%= (user && user.badgeId) ? user.badgeId : 'DL-LM-0842' %></strong> | <%= t('jurisdictionLabel') %>: <strong><%= (user && user.state) ? user.state : 'National' %></strong>
+        <p class="text-xs text-slate-300 mt-1 leading-relaxed">
+          <%= user ? user.name : t('officerLabel') %> | <%= t('badgeLabel') %>: <strong class="text-white"><%= (user && user.badgeId) ? user.badgeId : 'DL-LM-0842' %></strong> | <%= t('jurisdictionLabel') %>: <strong class="text-white"><%= (user && user.state) ? user.state : 'National' %></strong>
         </p>
       </div>
     </div>
 
-    <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full md:w-auto">
-      <a href="/dashboard" class="btn btn-sm btn-outline-light text-xs font-semibold py-2 px-3 shadow-sm flex items-center justify-center gap-1.5 flex-1 sm:flex-initial" title="View uploaded image scans dashboard">
-        <i class="fa-solid fa-images text-amber-300"></i> My Uploaded Scans
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:flex md:items-center gap-2 w-full md:w-auto">
+      <a href="/dashboard" class="btn btn-sm btn-outline-light text-xs font-semibold py-2 px-3 shadow-sm flex items-center justify-center gap-1.5 text-center" title="View uploaded image scans dashboard">
+        <i class="fa-solid fa-images text-amber-300"></i> <span>My Scans</span>
       </a>
-      <a href="/reports/export/csv" class="btn btn-sm btn-outline-light text-xs font-semibold py-2 px-3 shadow-sm flex items-center justify-center gap-1.5 flex-1 sm:flex-initial">
-        <i class="fa-solid fa-file-csv text-emerald-400"></i> <%= t('exportComplianceCsvBtn') %>
+      <a href="/reports/export/csv" class="btn btn-sm btn-outline-light text-xs font-semibold py-2 px-3 shadow-sm flex items-center justify-center gap-1.5 text-center">
+        <i class="fa-solid fa-file-csv text-emerald-400"></i> <span>Export CSV</span>
       </a>
-      <a href="/inspections/new" class="btn btn-sm btn-warning text-xs font-bold py-2 px-3 shadow-sm flex items-center justify-center gap-1.5 flex-1 sm:flex-initial">
-        <i class="fa-solid fa-camera"></i> <%= t('inspectNewPackageBtn') %>
+      <a href="/inspections/new" class="btn btn-sm btn-warning text-xs font-bold py-2 px-3 shadow-sm flex items-center justify-center gap-1.5 col-span-2 sm:col-span-1 md:col-span-auto text-center">
+        <i class="fa-solid fa-camera"></i> <span><%= t('inspectNewPackageBtn') %></span>
       </a>
     </div>
   </div>
@@ -37,47 +37,47 @@
   <div class="grid grid-cols-2 md:grid-cols-6 lg:grid-cols-5 gap-3 sm:gap-4 mb-6 sm:mb-8">
     <div class="bg-white p-3.5 sm:p-4 lg:p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between h-full md:col-span-2 lg:col-span-1">
       <div class="flex items-center justify-between gap-1 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-        <span class="truncate"><%= t('inspectedCommoditiesCard') %></span>
+        <span><%= t('inspectedCommoditiesCard') %></span>
         <i class="fa-solid fa-boxes-stacked text-slate-400 text-xs flex-shrink-0"></i>
       </div>
-      <div class="text-xl sm:text-2xl lg:text-3xl font-extrabold text-slate-900 mt-2 truncate"><%= stats.totalInspections %></div>
-      <div class="text-[10px] sm:text-[11px] text-slate-400 mt-1 truncate"><%= t('underRules2011') %></div>
+      <div class="text-xl sm:text-2xl lg:text-3xl font-extrabold text-slate-900 mt-2"><%= stats.totalInspections %></div>
+      <div class="text-[10px] sm:text-[11px] text-slate-400 mt-1 leading-tight"><%= t('underRules2011') %></div>
     </div>
     
     <div class="bg-white p-3.5 sm:p-4 lg:p-5 rounded-xl border border-emerald-200 shadow-sm flex flex-col justify-between h-full md:col-span-2 lg:col-span-1">
       <div class="flex items-center justify-between gap-1 text-[11px] font-bold text-emerald-700 uppercase tracking-wider">
-        <span class="truncate"><%= t('complianceRateCard') %></span>
+        <span><%= t('complianceRateCard') %></span>
         <i class="fa-solid fa-circle-check text-emerald-500 text-xs flex-shrink-0"></i>
       </div>
-      <div class="text-xl sm:text-2xl lg:text-3xl font-extrabold text-emerald-600 mt-2 truncate"><%= stats.complianceRate %>%</div>
-      <div class="text-[10px] sm:text-[11px] text-emerald-600 font-semibold mt-1 truncate"><%= stats.compliantCount %> <%= t('fullyCompliantCountText') %></div>
+      <div class="text-xl sm:text-2xl lg:text-3xl font-extrabold text-emerald-600 mt-2"><%= stats.complianceRate %>%</div>
+      <div class="text-[10px] sm:text-[11px] text-emerald-600 font-semibold mt-1 leading-tight"><%= stats.compliantCount %> <%= t('fullyCompliantCountText') %></div>
     </div>
 
     <div class="bg-white p-3.5 sm:p-4 lg:p-5 rounded-xl border border-red-200 shadow-sm flex flex-col justify-between h-full md:col-span-2 lg:col-span-1">
       <div class="flex items-center justify-between gap-1 text-[11px] font-bold text-red-700 uppercase tracking-wider">
-        <span class="truncate"><%= t('flaggedInfractionsCard') %></span>
+        <span><%= t('flaggedInfractionsCard') %></span>
         <i class="fa-solid fa-triangle-exclamation text-red-500 text-xs flex-shrink-0"></i>
       </div>
-      <div class="text-xl sm:text-2xl lg:text-3xl font-extrabold text-red-600 mt-2 truncate"><%= stats.violationCount %></div>
-      <div class="text-[10px] sm:text-[11px] text-red-600 font-semibold mt-1 truncate"><%= t('pendingSec36Text') %></div>
+      <div class="text-xl sm:text-2xl lg:text-3xl font-extrabold text-red-600 mt-2"><%= stats.violationCount %></div>
+      <div class="text-[10px] sm:text-[11px] text-red-600 font-semibold mt-1 leading-tight"><%= t('pendingSec36Text') %></div>
     </div>
 
     <div class="bg-white p-3.5 sm:p-4 lg:p-5 rounded-xl border border-amber-200 shadow-sm flex flex-col justify-between h-full md:col-span-3 lg:col-span-1">
       <div class="flex items-center justify-between gap-1 text-[11px] font-bold text-amber-700 uppercase tracking-wider">
-        <span class="truncate"><%= t('totalLiabilitiesCard') %></span>
+        <span><%= t('totalLiabilitiesCard') %></span>
         <i class="fa-solid fa-scale-balanced text-amber-500 text-xs flex-shrink-0"></i>
       </div>
-      <div class="text-xl sm:text-2xl lg:text-3xl font-extrabold text-amber-600 mt-2 truncate">₹ <%= stats.totalFines.toLocaleString('en-IN') %></div>
-      <div class="text-[10px] sm:text-[11px] text-amber-600 font-semibold mt-1 truncate"><%= t('statutoryFinesText') %></div>
+      <div class="text-xl sm:text-2xl lg:text-3xl font-extrabold text-amber-600 mt-2">₹ <%= stats.totalFines.toLocaleString('en-IN') %></div>
+      <div class="text-[10px] sm:text-[11px] text-amber-600 font-semibold mt-1 leading-tight"><%= t('statutoryFinesText') %></div>
     </div>
 
     <div class="bg-white p-3.5 sm:p-4 lg:p-5 rounded-xl border border-purple-200 shadow-sm col-span-2 md:col-span-3 lg:col-span-1 flex flex-col justify-between h-full">
       <div class="flex items-center justify-between gap-1 text-[11px] font-bold text-purple-700 uppercase tracking-wider">
-        <span class="truncate">Consumer Complaints</span>
+        <span>Consumer Complaints</span>
         <i class="fa-solid fa-bullhorn text-purple-500 text-xs flex-shrink-0"></i>
       </div>
-      <div class="text-xl sm:text-2xl lg:text-3xl font-extrabold text-purple-700 mt-2 truncate"><%= stats.complaintCount || 0 %></div>
-      <div class="text-[10px] sm:text-[11px] text-purple-600 font-semibold mt-1 truncate">Citizen Statutory Grievances</div>
+      <div class="text-xl sm:text-2xl lg:text-3xl font-extrabold text-purple-700 mt-2"><%= stats.complaintCount || 0 %></div>
+      <div class="text-[10px] sm:text-[11px] text-purple-600 font-semibold mt-1 leading-tight">Citizen Statutory Grievances</div>
     </div>
   </div>
 

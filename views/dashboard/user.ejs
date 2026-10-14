@@ -37,22 +37,34 @@
   </div>
 
   <!-- Metric KPI Cards -->
-  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-8">
-    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-      <div class="text-[11px] font-bold text-slate-500 uppercase"><%= t('totalScansCard') %></div>
-      <div class="text-2xl font-extrabold text-slate-900 mt-1"><%= stats.totalScans %></div>
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
+    <div class="bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between h-full">
+      <div class="flex items-center justify-between gap-1 text-[11px] font-bold text-slate-500 uppercase">
+        <span class="truncate"><%= t('totalScansCard') %></span>
+        <i class="fa-solid fa-boxes-stacked text-slate-400 text-xs flex-shrink-0"></i>
+      </div>
+      <div class="text-xl sm:text-2xl font-extrabold text-slate-900 mt-2 truncate"><%= stats.totalScans %></div>
     </div>
-    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-      <div class="text-[11px] font-bold text-slate-500 uppercase"><%= t('compliantCard') %></div>
-      <div class="text-2xl font-extrabold text-emerald-600 mt-1"><%= stats.compliantCount %></div>
+    <div class="bg-white p-3.5 sm:p-4 rounded-xl border border-emerald-200 shadow-sm flex flex-col justify-between h-full">
+      <div class="flex items-center justify-between gap-1 text-[11px] font-bold text-emerald-700 uppercase">
+        <span class="truncate"><%= t('compliantCard') %></span>
+        <i class="fa-solid fa-circle-check text-emerald-500 text-xs flex-shrink-0"></i>
+      </div>
+      <div class="text-xl sm:text-2xl font-extrabold text-emerald-600 mt-2 truncate"><%= stats.compliantCount %></div>
     </div>
-    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-      <div class="text-[11px] font-bold text-slate-500 uppercase"><%= t('flaggedViolationsCard') %></div>
-      <div class="text-2xl font-extrabold text-red-600 mt-1"><%= stats.violationCount %></div>
+    <div class="bg-white p-3.5 sm:p-4 rounded-xl border border-red-200 shadow-sm flex flex-col justify-between h-full">
+      <div class="flex items-center justify-between gap-1 text-[11px] font-bold text-red-700 uppercase">
+        <span class="truncate"><%= t('flaggedViolationsCard') %></span>
+        <i class="fa-solid fa-triangle-exclamation text-red-500 text-xs flex-shrink-0"></i>
+      </div>
+      <div class="text-xl sm:text-2xl font-extrabold text-red-600 mt-2 truncate"><%= stats.violationCount %></div>
     </div>
-    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-      <div class="text-[11px] font-bold text-slate-500 uppercase"><%= t('averageScoreCard') %></div>
-      <div class="text-2xl font-extrabold text-amber-500 mt-1"><%= stats.avgScore %>%</div>
+    <div class="bg-white p-3.5 sm:p-4 rounded-xl border border-amber-200 shadow-sm flex flex-col justify-between h-full">
+      <div class="flex items-center justify-between gap-1 text-[11px] font-bold text-amber-700 uppercase">
+        <span class="truncate"><%= t('averageScoreCard') %></span>
+        <i class="fa-solid fa-chart-line text-amber-500 text-xs flex-shrink-0"></i>
+      </div>
+      <div class="text-xl sm:text-2xl font-extrabold text-amber-500 mt-2 truncate"><%= stats.avgScore %>%</div>
     </div>
   </div>
 
@@ -166,7 +178,7 @@
                       <i class="fa-solid fa-clock text-amber-600"></i> Filed
                     </span>
                   <% } %>
-                <% } else { %>
+                <% } else if (item.complianceStatus !== 'COMPLIANT') { %>
                   <button type="button" class="btn btn-outline-warning text-amber-600 border-amber-400 hover:bg-amber-500 hover:text-white btn-sm text-[10px] font-bold py-1 px-2 shadow-xs btn-raise-complaint btn-open-complaint-modal flex items-center gap-1"
                     data-id="<%= item._id %>"
                     data-inspection-number="<%= item.inspectionNumber %>"
@@ -175,6 +187,10 @@
                     data-violations="<%= (item.violationsList || []).join('; ') %>">
                     <i class="fa-solid fa-bullhorn"></i> Raise Complaint
                   </button>
+                <% } else { %>
+                  <span class="inline-flex items-center gap-1 px-2 py-1 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold" title="Product is rule-compliant. No violations detected.">
+                    <i class="fa-solid fa-circle-check text-emerald-600"></i> Compliant
+                  </span>
                 <% } %>
               <% } %>
             </div>
@@ -268,7 +284,7 @@
                           <span>Complaint Filed</span>
                         </span>
                       <% } %>
-                    <% } else { %>
+                    <% } else if (item.complianceStatus !== 'COMPLIANT') { %>
                       <button type="button" class="btn btn-outline-warning text-amber-600 border-amber-400 hover:bg-amber-500 hover:text-white btn-sm text-[11px] font-bold py-1 px-2.5 shadow-xs btn-raise-complaint btn-open-complaint-modal"
                         data-id="<%= item._id %>"
                         data-inspection-number="<%= item.inspectionNumber %>"
@@ -278,6 +294,10 @@
                         title="Raise official statutory complaint with Legal Metrology Enforcement">
                         <i class="fa-solid fa-bullhorn me-1"></i> Raise Complaint
                       </button>
+                    <% } else { %>
+                      <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold" title="Product is rule-compliant. No violations detected.">
+                        <i class="fa-solid fa-circle-check text-emerald-600"></i> Compliant
+                      </span>
                     <% } %>
                   <% } %>
                 </td>

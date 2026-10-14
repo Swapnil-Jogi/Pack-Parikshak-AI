@@ -30,7 +30,7 @@
       <a href="/reports/<%= inspection._id %>/pdf" class="btn btn-outline-danger btn-sm text-xs font-bold py-2 px-3 flex items-center justify-center gap-1.5 shadow-sm flex-1 sm:flex-initial">
         <i class="fa-solid fa-file-pdf"></i> <%= t('btnDownloadPdf') %>
       </a>
-      <% if (user && user.role === 'officer') { %>
+      <% if (user && user.role === 'officer' && inspection.complianceStatus !== 'COMPLIANT') { %>
         <button type="button" id="btnOpenNoticeModal" class="btn btn-warning btn-sm text-xs font-bold py-2 px-3 flex items-center justify-center gap-1.5 shadow-sm flex-1 sm:flex-initial">
           <i class="fa-solid fa-gavel"></i> <%= t('btnIssueNotice') %>
         </button>

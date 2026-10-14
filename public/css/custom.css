@@ -171,14 +171,8 @@ a, button, .btn {
 @media (max-width: 768px) {
   /* Prevent horizontal stretch on mobile */
   .container, .max-w-7xl, .max-w-6xl, .max-w-5xl {
-    padding-left: 1rem !important;
-    padding-right: 1rem !important;
-  }
-
-  /* Touch-friendly buttons on mobile */
-  .btn-sm {
-    padding-top: 0.5rem;
-    padding-bottom: 0.5rem;
+    padding-left: 0.875rem !important;
+    padding-right: 0.875rem !important;
   }
 
   /* Responsive font adjustments */
@@ -192,6 +186,11 @@ a, button, .btn {
   }
   .mobile-card:active {
     background-color: #f1f5f9;
+  }
+
+  /* Ensure modal dialog fits mobile viewports without edge clipping */
+  .modal-dialog {
+    margin: 0.75rem auto;
   }
 }
 

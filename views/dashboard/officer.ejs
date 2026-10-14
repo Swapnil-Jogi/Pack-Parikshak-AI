@@ -34,34 +34,50 @@
   </div>
 
   <!-- KPI Stats Row -->
-  <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
-    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-      <div class="text-[11px] font-bold text-slate-500 uppercase"><%= t('inspectedCommoditiesCard') %></div>
-      <div class="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1"><%= stats.totalInspections %></div>
-      <div class="text-[10px] text-slate-400 mt-1"><%= t('underRules2011') %></div>
-    </div>
-    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-      <div class="text-[11px] font-bold text-slate-500 uppercase"><%= t('complianceRateCard') %></div>
-      <div class="text-2xl sm:text-3xl font-extrabold text-emerald-600 mt-1"><%= stats.complianceRate %>%</div>
-      <div class="text-[10px] text-emerald-600 font-semibold mt-1"><%= stats.compliantCount %> <%= t('fullyCompliantCountText') %></div>
-    </div>
-    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-      <div class="text-[11px] font-bold text-slate-500 uppercase"><%= t('flaggedInfractionsCard') %></div>
-      <div class="text-2xl sm:text-3xl font-extrabold text-red-600 mt-1"><%= stats.violationCount %></div>
-      <div class="text-[10px] text-red-600 font-semibold mt-1"><%= t('pendingSec36Text') %></div>
-    </div>
-    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-      <div class="text-[11px] font-bold text-slate-500 uppercase"><%= t('totalLiabilitiesCard') %></div>
-      <div class="text-2xl sm:text-3xl font-extrabold text-amber-600 mt-1">₹ <%= stats.totalFines.toLocaleString('en-IN') %></div>
-      <div class="text-[10px] text-amber-600 font-semibold mt-1"><%= t('statutoryFinesText') %></div>
-    </div>
-    <div class="bg-white p-5 rounded-xl border border-purple-200 shadow-sm col-span-2 md:col-span-1">
-      <div class="text-[11px] font-bold text-purple-700 uppercase flex items-center justify-between">
-        <span>Consumer Complaints</span>
-        <i class="fa-solid fa-bullhorn text-purple-500"></i>
+  <div class="grid grid-cols-2 md:grid-cols-6 lg:grid-cols-5 gap-3 sm:gap-4 mb-6 sm:mb-8">
+    <div class="bg-white p-3.5 sm:p-4 lg:p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between h-full md:col-span-2 lg:col-span-1">
+      <div class="flex items-center justify-between gap-1 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+        <span class="truncate"><%= t('inspectedCommoditiesCard') %></span>
+        <i class="fa-solid fa-boxes-stacked text-slate-400 text-xs flex-shrink-0"></i>
       </div>
-      <div class="text-2xl sm:text-3xl font-extrabold text-purple-700 mt-1"><%= stats.complaintCount || 0 %></div>
-      <div class="text-[10px] text-purple-600 font-semibold mt-1">Citizen Statutory Grievances</div>
+      <div class="text-xl sm:text-2xl lg:text-3xl font-extrabold text-slate-900 mt-2 truncate"><%= stats.totalInspections %></div>
+      <div class="text-[10px] sm:text-[11px] text-slate-400 mt-1 truncate"><%= t('underRules2011') %></div>
+    </div>
+    
+    <div class="bg-white p-3.5 sm:p-4 lg:p-5 rounded-xl border border-emerald-200 shadow-sm flex flex-col justify-between h-full md:col-span-2 lg:col-span-1">
+      <div class="flex items-center justify-between gap-1 text-[11px] font-bold text-emerald-700 uppercase tracking-wider">
+        <span class="truncate"><%= t('complianceRateCard') %></span>
+        <i class="fa-solid fa-circle-check text-emerald-500 text-xs flex-shrink-0"></i>
+      </div>
+      <div class="text-xl sm:text-2xl lg:text-3xl font-extrabold text-emerald-600 mt-2 truncate"><%= stats.complianceRate %>%</div>
+      <div class="text-[10px] sm:text-[11px] text-emerald-600 font-semibold mt-1 truncate"><%= stats.compliantCount %> <%= t('fullyCompliantCountText') %></div>
+    </div>
+
+    <div class="bg-white p-3.5 sm:p-4 lg:p-5 rounded-xl border border-red-200 shadow-sm flex flex-col justify-between h-full md:col-span-2 lg:col-span-1">
+      <div class="flex items-center justify-between gap-1 text-[11px] font-bold text-red-700 uppercase tracking-wider">
+        <span class="truncate"><%= t('flaggedInfractionsCard') %></span>
+        <i class="fa-solid fa-triangle-exclamation text-red-500 text-xs flex-shrink-0"></i>
+      </div>
+      <div class="text-xl sm:text-2xl lg:text-3xl font-extrabold text-red-600 mt-2 truncate"><%= stats.violationCount %></div>
+      <div class="text-[10px] sm:text-[11px] text-red-600 font-semibold mt-1 truncate"><%= t('pendingSec36Text') %></div>
+    </div>
+
+    <div class="bg-white p-3.5 sm:p-4 lg:p-5 rounded-xl border border-amber-200 shadow-sm flex flex-col justify-between h-full md:col-span-3 lg:col-span-1">
+      <div class="flex items-center justify-between gap-1 text-[11px] font-bold text-amber-700 uppercase tracking-wider">
+        <span class="truncate"><%= t('totalLiabilitiesCard') %></span>
+        <i class="fa-solid fa-scale-balanced text-amber-500 text-xs flex-shrink-0"></i>
+      </div>
+      <div class="text-xl sm:text-2xl lg:text-3xl font-extrabold text-amber-600 mt-2 truncate">₹ <%= stats.totalFines.toLocaleString('en-IN') %></div>
+      <div class="text-[10px] sm:text-[11px] text-amber-600 font-semibold mt-1 truncate"><%= t('statutoryFinesText') %></div>
+    </div>
+
+    <div class="bg-white p-3.5 sm:p-4 lg:p-5 rounded-xl border border-purple-200 shadow-sm col-span-2 md:col-span-3 lg:col-span-1 flex flex-col justify-between h-full">
+      <div class="flex items-center justify-between gap-1 text-[11px] font-bold text-purple-700 uppercase tracking-wider">
+        <span class="truncate">Consumer Complaints</span>
+        <i class="fa-solid fa-bullhorn text-purple-500 text-xs flex-shrink-0"></i>
+      </div>
+      <div class="text-xl sm:text-2xl lg:text-3xl font-extrabold text-purple-700 mt-2 truncate"><%= stats.complaintCount || 0 %></div>
+      <div class="text-[10px] sm:text-[11px] text-purple-600 font-semibold mt-1 truncate">Citizen Statutory Grievances</div>
     </div>
   </div>
 
@@ -229,9 +245,15 @@
                     <span class="text-slate-400 text-[10px]"><%= t('badgeNone') %></span>
                   <% } %>
 
-                  <span class="text-[11px] font-bold text-red-600">
-                    ₹ <%= (item.section36Penalty ? item.section36Penalty.estimatedAmount : 25000).toLocaleString('en-IN') %> Exp.
-                  </span>
+                  <% if (item.complianceStatus === 'COMPLIANT') { %>
+                    <span class="text-[11px] font-semibold text-emerald-600">
+                      <i class="fa-solid fa-circle-check me-0.5"></i> Compliant
+                    </span>
+                  <% } else { %>
+                    <span class="text-[11px] font-bold text-red-600">
+                      ₹ <%= (item.section36Penalty ? item.section36Penalty.estimatedAmount : 25000).toLocaleString('en-IN') %> Exp.
+                    </span>
+                  <% } %>
 
                   <!-- Officer view: statutory grievance number -->
                   <% if (item.complaint && item.complaint.isFiled) { %>
@@ -244,30 +266,32 @@
             </div>
 
             <!-- Card Enforcement Actions -->
-            <div class="pt-2.5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-1.5">
+            <div class="pt-2.5 border-t border-slate-100 flex flex-wrap items-center gap-1.5">
               <a href="/inspections/<%= item._id %>/sandbox" class="btn btn-outline-primary btn-sm text-[11px] py-1 px-2.5 flex items-center gap-1">
                 <i class="fa-solid fa-microchip"></i> <%= t('btnSandbox') %>
               </a>
-              <button type="button" class="btn btn-warning btn-sm text-[11px] font-bold py-1 px-2 shadow-xs btn-open-notice-modal flex items-center gap-1"
-                data-id="<%= item._id %>"
-                data-type="WARNING"
-                data-product="<%= item.productName %>"
-                data-manufacturer="<%= item.extractedData.manufacturer || '' %>"
-                data-violations="<%= (item.violationsList || []).join(';') %>"
-                data-penalty="<%= item.section36Penalty ? item.section36Penalty.estimatedAmount : 25000 %>"
-                title="Issue Pre-Enforcement Warning Notice with Rectification Deadline">
-                <i class="fa-solid fa-triangle-exclamation"></i> Warning Notice
-              </button>
-              <button type="button" class="btn btn-danger btn-sm text-[11px] font-bold py-1 px-2 shadow-xs btn-open-notice-modal flex items-center gap-1"
-                data-id="<%= item._id %>"
-                data-type="SHOW_CAUSE"
-                data-product="<%= item.productName %>"
-                data-manufacturer="<%= item.extractedData.manufacturer || '' %>"
-                data-violations="<%= (item.violationsList || []).join(';') %>"
-                data-penalty="<%= item.section36Penalty ? item.section36Penalty.estimatedAmount : 25000 %>"
-                title="Issue Formal Section 36 Show-Cause Notice">
-                <i class="fa-solid fa-gavel"></i> SCN
-              </button>
+              <% if (item.complianceStatus !== 'COMPLIANT') { %>
+                <button type="button" class="btn btn-warning btn-sm text-[11px] font-bold py-1 px-2 shadow-xs btn-open-notice-modal flex items-center gap-1"
+                  data-id="<%= item._id %>"
+                  data-type="WARNING"
+                  data-product="<%= item.productName %>"
+                  data-manufacturer="<%= item.extractedData.manufacturer || '' %>"
+                  data-violations="<%= (item.violationsList || []).join(';') %>"
+                  data-penalty="<%= item.section36Penalty ? item.section36Penalty.estimatedAmount : 25000 %>"
+                  title="Issue Pre-Enforcement Warning Notice with Rectification Deadline">
+                  <i class="fa-solid fa-triangle-exclamation"></i> Warning Notice
+                </button>
+                <button type="button" class="btn btn-danger btn-sm text-[11px] font-bold py-1 px-2 shadow-xs btn-open-notice-modal flex items-center gap-1"
+                  data-id="<%= item._id %>"
+                  data-type="SHOW_CAUSE"
+                  data-product="<%= item.productName %>"
+                  data-manufacturer="<%= item.extractedData.manufacturer || '' %>"
+                  data-violations="<%= (item.violationsList || []).join(';') %>"
+                  data-penalty="<%= item.section36Penalty ? item.section36Penalty.estimatedAmount : 25000 %>"
+                  title="Issue Formal Section 36 Show-Cause Notice">
+                  <i class="fa-solid fa-gavel"></i> SCN
+                </button>
+              <% } %>
               <a href="/reports/<%= item._id %>/pdf" class="btn btn-outline-danger btn-sm text-[11px] py-1 px-2 flex items-center gap-1" title="<%= t('btnDownloadPdf') %>">
                 <i class="fa-solid fa-file-pdf"></i> PDF
               </a>
@@ -348,33 +372,41 @@
                     <span class="badge bg-red-100 text-red-800"><%= t('statusNonCompliant') %></span>
                   <% } %>
                 </td>
-                <td class="font-bold text-red-600">
-                  ₹ <%= (item.section36Penalty ? item.section36Penalty.estimatedAmount : 25000).toLocaleString('en-IN') %>
+                <td>
+                  <% if (item.complianceStatus === 'COMPLIANT') { %>
+                    <span class="text-xs font-semibold text-emerald-600">₹ 0</span>
+                  <% } else { %>
+                    <span class="font-bold text-red-600">
+                      ₹ <%= (item.section36Penalty ? item.section36Penalty.estimatedAmount : 25000).toLocaleString('en-IN') %>
+                    </span>
+                  <% } %>
                 </td>
                 <td class="pe-4 text-end space-x-1 whitespace-nowrap">
                   <a href="/inspections/<%= item._id %>/sandbox" class="btn btn-outline-primary btn-sm text-[11px] py-1 px-2" title="<%= t('btnSandbox') %>">
                     <i class="fa-solid fa-microchip"></i>
                   </a>
-                  <button type="button" class="btn btn-warning btn-sm text-[11px] font-bold py-1 px-2.5 shadow-xs btn-open-notice-modal"
-                    data-id="<%= item._id %>"
-                    data-type="WARNING"
-                    data-product="<%= item.productName %>"
-                    data-manufacturer="<%= item.extractedData.manufacturer || '' %>"
-                    data-violations="<%= (item.violationsList || []).join(';') %>"
-                    data-penalty="<%= item.section36Penalty ? item.section36Penalty.estimatedAmount : 25000 %>"
-                    title="Issue Pre-Enforcement Warning Notice with Rectification Deadline">
-                    <i class="fa-solid fa-triangle-exclamation me-1"></i> Warning Notice
-                  </button>
-                  <button type="button" class="btn btn-danger btn-sm text-[11px] font-bold py-1 px-2 shadow-xs btn-open-notice-modal"
-                    data-id="<%= item._id %>"
-                    data-type="SHOW_CAUSE"
-                    data-product="<%= item.productName %>"
-                    data-manufacturer="<%= item.extractedData.manufacturer || '' %>"
-                    data-violations="<%= (item.violationsList || []).join(';') %>"
-                    data-penalty="<%= item.section36Penalty ? item.section36Penalty.estimatedAmount : 25000 %>"
-                    title="Issue Formal Section 36 Show-Cause Notice">
-                    <i class="fa-solid fa-gavel me-0.5"></i> SCN
-                  </button>
+                  <% if (item.complianceStatus !== 'COMPLIANT') { %>
+                    <button type="button" class="btn btn-warning btn-sm text-[11px] font-bold py-1 px-2.5 shadow-xs btn-open-notice-modal"
+                      data-id="<%= item._id %>"
+                      data-type="WARNING"
+                      data-product="<%= item.productName %>"
+                      data-manufacturer="<%= item.extractedData.manufacturer || '' %>"
+                      data-violations="<%= (item.violationsList || []).join(';') %>"
+                      data-penalty="<%= item.section36Penalty ? item.section36Penalty.estimatedAmount : 25000 %>"
+                      title="Issue Pre-Enforcement Warning Notice with Rectification Deadline">
+                      <i class="fa-solid fa-triangle-exclamation me-1"></i> Warning Notice
+                    </button>
+                    <button type="button" class="btn btn-danger btn-sm text-[11px] font-bold py-1 px-2 shadow-xs btn-open-notice-modal"
+                      data-id="<%= item._id %>"
+                      data-type="SHOW_CAUSE"
+                      data-product="<%= item.productName %>"
+                      data-manufacturer="<%= item.extractedData.manufacturer || '' %>"
+                      data-violations="<%= (item.violationsList || []).join(';') %>"
+                      data-penalty="<%= item.section36Penalty ? item.section36Penalty.estimatedAmount : 25000 %>"
+                      title="Issue Formal Section 36 Show-Cause Notice">
+                      <i class="fa-solid fa-gavel me-0.5"></i> SCN
+                    </button>
+                  <% } %>
                   <a href="/reports/<%= item._id %>/pdf" class="btn btn-outline-danger btn-sm text-[11px] py-1 px-2" title="<%= t('btnDownloadPdf') %>">
                     <i class="fa-solid fa-file-pdf"></i>
                   </a>
